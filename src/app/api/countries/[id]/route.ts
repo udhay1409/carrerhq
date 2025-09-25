@@ -6,6 +6,7 @@ import {
   handleImageUpload,
   deleteImageFromCloudinary,
 } from "@/lib/image-upload-utils";
+import { findEntityBySlugOrId } from "@/lib/slug-utils";
 
 interface RouteParams {
   params: Promise<{ id: string }>;
@@ -16,7 +17,9 @@ export async function GET(_request: NextRequest, { params }: RouteParams) {
     await connectToDatabase();
 
     const { id } = await params;
-    const country = await Country.findById(id);
+
+    // Use the utility function to find by either ID or slug
+    const country = await findEntityBySlugOrId(Country, id, "name");
 
     if (!country) {
       return NextResponse.json({ error: "Country not found" }, { status: 404 });

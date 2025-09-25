@@ -94,7 +94,7 @@ const UniversitySchema = new Schema<IUniversity>(
 );
 
 // Create indexes for better query performance
-UniversitySchema.index({ name: 1 });
+// Note: name field already has unique index, other indexes added below
 UniversitySchema.index({ countryId: 1 });
 UniversitySchema.index({ ranking: 1 });
 UniversitySchema.index({ type: 1 });

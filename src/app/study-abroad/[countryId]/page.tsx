@@ -13,17 +13,6 @@ interface CountryPageProps {
   }>;
 }
 
-interface CountryApiResponse {
-  id: string;
-  name: string;
-  code?: string;
-  imageId?: string;
-  description?: string;
-  costOfLiving?: string;
-  visaRequirements?: string;
-  scholarshipsAvailable?: string;
-}
-
 interface UniversityApiResponse {
   id: string;
   name: string;
@@ -32,11 +21,16 @@ interface UniversityApiResponse {
 
 // Helper function to fetch country data from API
 async function getCountryData(countrySlug: string) {
+  const { logDataFetchError, log404Error, logNetworkError } = await import(
+    "@/utils/errorUtils"
+  );
+
   try {
+    // Use direct API call to the single country endpoint
     const response = await fetch(
       `${
         process.env.NEXT_PUBLIC_BASE_URL || "http://localhost:3000"
-      }/api/countries`,
+      }/api/countries/${countrySlug}`,
       {
         cache: "no-store", // Ensure fresh data on every request
         headers: {
@@ -44,39 +38,46 @@ async function getCountryData(countrySlug: string) {
         },
       }
     );
-    const data = await response.json();
 
-    if (data.countries) {
-      // Import slug utilities
-      const { generateCountrySlug } = await import("@/lib/slug-utils");
+    if (response.ok) {
+      const data = await response.json();
+      return data.country;
+    }
 
-      // First try to find by MongoDB ObjectId (backward compatibility)
-      if (countrySlug.match(/^[0-9a-fA-F]{24}$/)) {
-        const country = data.countries.find(
-          (c: CountryApiResponse) => c.id === countrySlug
-        );
-        if (country) return country;
-      }
-
-      // Then try to find by slug
-      const country = data.countries.find((c: CountryApiResponse) => {
-        const slug = generateCountrySlug(c.name);
-        return slug === countrySlug;
+    if (response.status === 404) {
+      log404Error("Country", countrySlug, {
+        endpoint: `/api/countries/${countrySlug}`,
+        status: response.status,
       });
+      return null;
+    }
 
-      if (country) return country;
+    // Handle other HTTP errors (5xx, etc.)
+    const errorMessage = `API Error: ${response.status} ${response.statusText}`;
+    logDataFetchError(errorMessage, "Country", countrySlug, {
+      endpoint: `/api/countries/${countrySlug}`,
+      status: response.status,
+      statusText: response.statusText,
+    });
 
-      // Fallback: try by code or name (legacy support)
-      return data.countries.find(
-        (c: CountryApiResponse) =>
-          c.code?.toLowerCase() === countrySlug.toLowerCase() ||
-          c.name.toLowerCase().replace(/\s+/g, "") ===
-            countrySlug.toLowerCase().replace(/\s+/g, "")
+    throw new Error(errorMessage);
+  } catch (error) {
+    if (error instanceof TypeError && error.message.includes("fetch")) {
+      // Network error
+      logNetworkError(error, `/api/countries/${countrySlug}`, {
+        countrySlug,
+      });
+    } else {
+      // Other errors
+      logDataFetchError(
+        error instanceof Error ? error : String(error),
+        "Country",
+        countrySlug,
+        {
+          endpoint: `/api/countries/${countrySlug}`,
+        }
       );
     }
-    return null;
-  } catch (error) {
-    console.error("Error fetching country data:", error);
     return null;
   }
 }
@@ -144,9 +145,10 @@ export async function generateMetadata({
 export default async function CountryPage({ params }: CountryPageProps) {
   const { countryId } = await params;
 
-  // Get country data from API
+  // Get country data from API using direct endpoint call
   const countryData = await getCountryData(countryId);
 
+  // Trigger Next.js 404 page if country not found
   if (!countryData) {
     notFound();
   }

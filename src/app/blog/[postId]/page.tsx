@@ -1,11 +1,7 @@
 import React from "react";
 import { Metadata } from "next";
 import { notFound } from "next/navigation";
-import {
-  getAllBlogPosts,
-  getBlogPostById,
-  getRelatedBlogPosts,
-} from "../../../lib/data";
+import { getBlogPostById, getRelatedBlogPosts } from "../../../lib/data";
 import { BlogPostClient } from "./blog-post-client";
 export const dynamic = "force-dynamic";
 
@@ -17,11 +13,9 @@ interface BlogPostPageProps {
 
 // Generate static params for all blog posts
 export async function generateStaticParams() {
-  const posts = await getAllBlogPosts();
-
-  return posts.map((post) => ({
-    postId: post.id,
-  }));
+  // During build time, make all blog posts dynamic to avoid database connection issues
+  // This ensures the build doesn't fail if the database is not available
+  return [];
 }
 
 // Generate dynamic metadata for each blog post

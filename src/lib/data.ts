@@ -1,7 +1,10 @@
 import type { BlogPost, BlogCategory } from "@/types/blog";
 import type { Country } from "@/types/education";
 
-const API_BASE_URL = process.env.NEXT_PUBLIC_API_URL || "";
+const API_BASE_URL =
+  process.env.NEXT_PUBLIC_API_URL ||
+  process.env.NEXT_PUBLIC_BASE_URL ||
+  "http://localhost:3000";
 
 // Helper function to handle API responses
 async function handleApiResponse<T>(response: Response): Promise<T> {
