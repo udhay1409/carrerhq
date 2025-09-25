@@ -1,0 +1,405 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Excel to CSV Converter - Course Import</title>
+    <style>
+        body {
+            font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
+            max-width: 800px;
+            margin: 0 auto;
+            padding: 20px;
+            line-height: 1.6;
+        }
+        .container {
+            background: #f8f9fa;
+            padding: 30px;
+            border-radius: 10px;
+            margin: 20px 0;
+        }
+        .upload-area {
+            border: 2px dashed #007bff;
+            border-radius: 10px;
+            padding: 40px;
+            text-align: center;
+            background: white;
+            margin: 20px 0;
+            cursor: pointer;
+            transition: all 0.3s ease;
+        }
+        .upload-area:hover {
+            border-color: #0056b3;
+            background: #f8f9ff;
+        }
+        .upload-area.dragover {
+            border-color: #28a745;
+            background: #f8fff8;
+        }
+        button {
+            background: #007bff;
+            color: white;
+            border: none;
+            padding: 12px 24px;
+            border-radius: 6px;
+            cursor: pointer;
+            font-size: 16px;
+            margin: 10px;
+        }
+        button:hover {
+            background: #0056b3;
+        }
+        button:disabled {
+            background: #6c757d;
+            cursor: not-allowed;
+        }
+        .success {
+            color: #28a745;
+            font-weight: bold;
+        }
+        .error {
+            color: #dc3545;
+            font-weight: bold;
+        }
+        .info {
+            background: #e3f2fd;
+            padding: 15px;
+            border-radius: 6px;
+            margin: 15px 0;
+            border-left: 4px solid #2196f3;
+        }
+        table {
+            width: 100%;
+            border-collapse: collapse;
+            margin: 20px 0;
+        }
+        th, td {
+            border: 1px solid #ddd;
+            padding: 8px;
+            text-align: left;
+        }
+        th {
+            background: #f2f2f2;
+            font-weight: bold;
+        }
+        .preview {
+            max-height: 300px;
+            overflow-y: auto;
+            border: 1px solid #ddd;
+            border-radius: 6px;
+        }
+    </style>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/xlsx/0.18.5/xlsx.full.min.js"></script>
+</head>
+<body>
+    <div class="container">
+        <h1>📊 Excel to CSV Converter</h1>
+        <p>Convert your Excel files to CSV format for course import. This tool ensures proper formatting and validates your data.</p>
+        
+        <div class="info">
+            <strong>Supported formats:</strong> .xlsx, .xls, .csv<br>
+            <strong>Output:</strong> CSV file ready for course import
+        </div>
+
+        <div class="upload-area" id="uploadArea">
+            <h3>📁 Drop your Excel file here or click to browse</h3>
+            <p>Select your Excel file containing course data</p>
+            <input type="file" id="fileInput" accept=".xlsx,.xls,.csv" style="display: none;">
+        </div>
+
+        <div id="fileInfo" style="display: none;">
+            <h3>File Information</h3>
+            <p id="fileName"></p>
+            <p id="fileSize"></p>
+            <p id="sheetInfo"></p>
+        </div>
+
+        <div id="preview" style="display: none;">
+            <h3>Data Preview</h3>
+            <div class="preview" id="previewTable"></div>
+            <p><strong>Rows found:</strong> <span id="rowCount">0</span></p>
+        </div>
+
+        <div id="validation" style="display: none;">
+            <h3>Validation Results</h3>
+            <div id="validationResults"></div>
+        </div>
+
+        <div id="actions" style="display: none;">
+            <button onclick="downloadCSV()">📥 Download CSV</button>
+            <button onclick="reset()">🔄 Start Over</button>
+        </div>
+
+        <div id="status"></div>
+    </div>
+
+    <script>
+        let workbook = null;
+        let csvData = '';
+        let fileName = '';
+
+        const uploadArea = document.getElementById('uploadArea');
+        const fileInput = document.getElementById('fileInput');
+        const status = document.getElementById('status');
+
+        // Required columns for validation
+        const requiredColumns = [
+            'universityName', 'countryName', 'programName', 'studyLevel',
+            'campus', 'duration', 'openIntakes', 'intakeYear',
+            'entryRequirements', 'ieltsScore', 'ieltsNoBandLessThan', 'yearlyTuitionFees'
+        ];
+
+        const validStudyLevels = ['Undergraduate', 'Postgraduate', 'Doctorate', 'Certificate', 'Diploma'];
+
+        // Event listeners
+        uploadArea.addEventListener('click', () => fileInput.click());
+        uploadArea.addEventListener('dragover', handleDragOver);
+        uploadArea.addEventListener('drop', handleDrop);
+        fileInput.addEventListener('change', handleFileSelect);
+
+        function handleDragOver(e) {
+            e.preventDefault();
+            uploadArea.classList.add('dragover');
+        }
+
+        function handleDrop(e) {
+            e.preventDefault();
+            uploadArea.classList.remove('dragover');
+            const files = e.dataTransfer.files;
+            if (files.length > 0) {
+                processFile(files[0]);
+            }
+        }
+
+        function handleFileSelect(e) {
+            const file = e.target.files[0];
+            if (file) {
+                processFile(file);
+            }
+        }
+
+        function processFile(file) {
+            fileName = file.name.replace(/\.[^/.]+$/, "");
+            status.innerHTML = '<p>📖 Reading file...</p>';
+            
+            const reader = new FileReader();
+            reader.onload = function(e) {
+                try {
+                    const data = new Uint8Array(e.target.result);
+                    workbook = XLSX.read(data, { type: 'array' });
+                    
+                    displayFileInfo(file);
+                    processWorkbook();
+                } catch (error) {
+                    status.innerHTML = `<p class="error">❌ Error reading file: ${error.message}</p>`;
+                }
+            };
+            reader.readAsArrayBuffer(file);
+        }
+
+        function displayFileInfo(file) {
+            document.getElementById('fileName').textContent = `File: ${file.name}`;
+            document.getElementById('fileSize').textContent = `Size: ${(file.size / 1024).toFixed(1)} KB`;
+            document.getElementById('sheetInfo').textContent = `Sheets: ${workbook.SheetNames.join(', ')}`;
+            document.getElementById('fileInfo').style.display = 'block';
+        }
+
+        function processWorkbook() {
+            try {
+                // Use first sheet
+                const sheetName = workbook.SheetNames[0];
+                const worksheet = workbook.Sheets[sheetName];
+                
+                // Convert to JSON
+                const jsonData = XLSX.utils.sheet_to_json(worksheet);
+                
+                if (jsonData.length === 0) {
+                    status.innerHTML = '<p class="error">❌ No data found in the file</p>';
+                    return;
+                }
+
+                // Display preview
+                displayPreview(jsonData);
+                
+                // Validate data
+                const validation = validateData(jsonData);
+                displayValidation(validation);
+                
+                // Convert to CSV
+                csvData = XLSX.utils.sheet_to_csv(worksheet);
+                
+                document.getElementById('actions').style.display = 'block';
+                status.innerHTML = '<p class="success">✅ File processed successfully!</p>';
+                
+            } catch (error) {
+                status.innerHTML = `<p class="error">❌ Error processing file: ${error.message}</p>`;
+            }
+        }
+
+        function displayPreview(data) {
+            const preview = document.getElementById('previewTable');
+            const rowCount = document.getElementById('rowCount');
+            
+            if (data.length === 0) return;
+            
+            // Create table
+            let html = '<table><thead><tr>';
+            const headers = Object.keys(data[0]);
+            headers.forEach(header => {
+                html += `<th>${header}</th>`;
+            });
+            html += '</tr></thead><tbody>';
+            
+            // Show first 5 rows
+            const previewData = data.slice(0, 5);
+            previewData.forEach(row => {
+                html += '<tr>';
+                headers.forEach(header => {
+                    html += `<td>${row[header] || ''}</td>`;
+                });
+                html += '</tr>';
+            });
+            
+            html += '</tbody></table>';
+            preview.innerHTML = html;
+            rowCount.textContent = data.length;
+            document.getElementById('preview').style.display = 'block';
+        }
+
+        function validateData(data) {
+            const results = {
+                errors: [],
+                warnings: [],
+                valid: true
+            };
+
+            if (data.length === 0) {
+                results.errors.push('No data rows found');
+                results.valid = false;
+                return results;
+            }
+
+            const headers = Object.keys(data[0]);
+            
+            // Check required columns
+            const missingColumns = requiredColumns.filter(col => !headers.includes(col));
+            if (missingColumns.length > 0) {
+                results.errors.push(`Missing required columns: ${missingColumns.join(', ')}`);
+                results.valid = false;
+            }
+
+            // Validate data rows
+            data.forEach((row, index) => {
+                const rowNum = index + 2; // +2 for header and 0-based index
+                
+                // Check required fields
+                requiredColumns.forEach(col => {
+                    if (headers.includes(col) && (!row[col] || row[col].toString().trim() === '')) {
+                        results.errors.push(`Row ${rowNum}: Missing ${col}`);
+                        results.valid = false;
+                    }
+                });
+
+                // Validate study level
+                if (row.studyLevel && !validStudyLevels.includes(row.studyLevel)) {
+                    results.errors.push(`Row ${rowNum}: Invalid study level "${row.studyLevel}". Must be one of: ${validStudyLevels.join(', ')}`);
+                    results.valid = false;
+                }
+
+                // Validate IELTS scores
+                if (row.ieltsScore) {
+                    const score = parseFloat(row.ieltsScore);
+                    if (isNaN(score) || score < 0 || score > 9) {
+                        results.errors.push(`Row ${rowNum}: Invalid IELTS score "${row.ieltsScore}". Must be between 0 and 9`);
+                        results.valid = false;
+                    }
+                }
+
+                if (row.ieltsNoBandLessThan) {
+                    const score = parseFloat(row.ieltsNoBandLessThan);
+                    if (isNaN(score) || score < 0 || score > 9) {
+                        results.errors.push(`Row ${rowNum}: Invalid IELTS band score "${row.ieltsNoBandLessThan}". Must be between 0 and 9`);
+                        results.valid = false;
+                    }
+                }
+
+                // Check for common issues
+                if (row.universityName && row.universityName.length < 3) {
+                    results.warnings.push(`Row ${rowNum}: University name seems too short`);
+                }
+
+                if (row.programName && row.programName.length < 5) {
+                    results.warnings.push(`Row ${rowNum}: Program name seems too short`);
+                }
+            });
+
+            return results;
+        }
+
+        function displayValidation(validation) {
+            const container = document.getElementById('validationResults');
+            let html = '';
+
+            if (validation.valid) {
+                html += '<p class="success">✅ All validation checks passed!</p>';
+            } else {
+                html += '<p class="error">❌ Validation failed. Please fix the following issues:</p>';
+            }
+
+            if (validation.errors.length > 0) {
+                html += '<h4 style="color: #dc3545;">Errors:</h4><ul>';
+                validation.errors.forEach(error => {
+                    html += `<li style="color: #dc3545;">${error}</li>`;
+                });
+                html += '</ul>';
+            }
+
+            if (validation.warnings.length > 0) {
+                html += '<h4 style="color: #ffc107;">Warnings:</h4><ul>';
+                validation.warnings.forEach(warning => {
+                    html += `<li style="color: #ffc107;">${warning}</li>`;
+                });
+                html += '</ul>';
+            }
+
+            container.innerHTML = html;
+            document.getElementById('validation').style.display = 'block';
+        }
+
+        function downloadCSV() {
+            if (!csvData) {
+                status.innerHTML = '<p class="error">❌ No data to download</p>';
+                return;
+            }
+
+            const blob = new Blob([csvData], { type: 'text/csv;charset=utf-8;' });
+            const link = document.createElement('a');
+            const url = URL.createObjectURL(blob);
+            
+            link.setAttribute('href', url);
+            link.setAttribute('download', `${fileName}-converted.csv`);
+            link.style.visibility = 'hidden';
+            
+            document.body.appendChild(link);
+            link.click();
+            document.body.removeChild(link);
+            
+            status.innerHTML = '<p class="success">✅ CSV file downloaded successfully!</p>';
+        }
+
+        function reset() {
+            workbook = null;
+            csvData = '';
+            fileName = '';
+            
+            document.getElementById('fileInfo').style.display = 'none';
+            document.getElementById('preview').style.display = 'none';
+            document.getElementById('validation').style.display = 'none';
+            document.getElementById('actions').style.display = 'none';
+            
+            fileInput.value = '';
+            status.innerHTML = '';
+        }
+    </script>
+</body>
+</html>

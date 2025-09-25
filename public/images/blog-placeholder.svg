@@ -1,0 +1,7 @@
+<svg width="400" height="225" viewBox="0 0 400 225" fill="none" xmlns="http://www.w3.org/2000/svg">
+  <rect width="400" height="225" fill="#F4F4F5"/>
+  <rect x="150" y="75" width="100" height="75" rx="8" fill="#E4E4E7"/>
+  <rect x="165" y="90" width="20" height="20" rx="10" fill="#A1A1AA"/>
+  <path d="M175 105L185 95L195 105" stroke="#A1A1AA" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/>
+  <text x="200" y="120" font-family="system-ui, -apple-system, sans-serif" font-size="14" fill="#71717A" text-anchor="middle">Blog Image</text>
+</svg>

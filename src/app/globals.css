@@ -1,0 +1,73 @@
+@import url("https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@400;500;600;700&display=swap");
+@import "tailwindcss";
+@config "../../tailwind.config.js";
+
+@utility scrollbar-hidden {
+  &::-webkit-scrollbar {
+    display: none;
+  }
+  -ms-overflow-style: none;
+  scrollbar-width: none;
+}
+
+@utility bg-gradient-primary {
+  background: linear-gradient(
+    135deg,
+    hsl(var(--heroui-primary-500)) 0%,
+    hsl(var(--heroui-secondary-500)) 100%
+  );
+}
+
+@utility text-gradient-primary {
+  background: linear-gradient(
+    135deg,
+    hsl(var(--heroui-primary-500)) 0%,
+    hsl(var(--heroui-secondary-500)) 100%
+  );
+  -webkit-background-clip: text;
+  -webkit-text-fill-color: transparent;
+  background-clip: text;
+  text-fill-color: transparent;
+}
+
+@utility animate-float {
+  animation: float 6s ease-in-out infinite;
+}
+
+@keyframes float {
+  0% {
+    transform: translateY(0px);
+  }
+  50% {
+    transform: translateY(-20px);
+  }
+  100% {
+    transform: translateY(0px);
+  }
+}
+
+body {
+  font-family: "Plus Jakarta Sans", sans-serif;
+}
+
+.hero-pattern {
+  background-color: #ffffff;
+  background-image: radial-gradient(#e0eefe 0.5px, #ffffff 0.5px);
+  background-size: 10px 10px;
+}
+
+.hero-gradient {
+  background: linear-gradient(
+    135deg,
+    rgba(0, 111, 238, 0.1) 0%,
+    rgba(86, 144, 248, 0.1) 100%
+  );
+}
+
+.card-hover {
+  transition: all 0.3s ease;
+}
+
+.card-hover:hover {
+  transform: translateY(-5px);
+}
