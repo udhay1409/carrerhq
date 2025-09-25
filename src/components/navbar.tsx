@@ -15,6 +15,11 @@ import {
 import { cn } from "@/lib/utils";
 import type { Country } from "@/types/education";
 import { generateCountrySlug } from "@/lib/slug-utils";
+import {
+  logDataFetchError,
+  logNetworkError,
+  logApiError,
+} from "@/utils/errorUtils";
 
 export const MainNavbar: React.FC = () => {
   const [isScrolled, setIsScrolled] = React.useState(false);
@@ -43,13 +48,33 @@ export const MainNavbar: React.FC = () => {
   const fetchData = async () => {
     try {
       const response = await fetch("/api/countries?limit=6");
+
+      if (!response.ok) {
+        logApiError(
+          `Failed to fetch countries for navbar: ${response.status}`,
+          "/api/countries",
+          { limit: 6 },
+          response.status
+        );
+        return;
+      }
+
       const data = await response.json();
 
       if (data.countries) {
         setCountries(data.countries);
       }
     } catch (error) {
-      console.error("Error fetching data:", error);
+      if (error instanceof TypeError && error.message.includes("fetch")) {
+        logNetworkError(error, "/api/countries", { limit: 6 });
+      } else {
+        logDataFetchError(
+          error instanceof Error ? error : String(error),
+          "navbar_countries",
+          undefined,
+          { limit: 6 }
+        );
+      }
     }
   };
   React.useEffect(() => {

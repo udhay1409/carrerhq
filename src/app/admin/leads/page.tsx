@@ -18,6 +18,11 @@ import { Select, SelectItem } from "@heroui/select";
 import { Pagination } from "@heroui/pagination";
 import { Search } from "lucide-react";
 import { ILead } from "@/models/lead";
+import {
+  logDataFetchError,
+  logNetworkError,
+  logApiError,
+} from "@/utils/errorUtils";
 
 export default function LeadsManagement() {
   const [leads, setLeads] = useState<ILead[]>([]);
@@ -45,6 +50,22 @@ export default function LeadsManagement() {
       }
 
       const response = await fetch(`/api/leads?${params}`);
+
+      if (!response.ok) {
+        logApiError(
+          `Failed to fetch leads: ${response.status}`,
+          "/api/leads",
+          {
+            status: selectedStatus,
+            page: pagination.page,
+            limit: pagination.limit,
+            searchTerm,
+          },
+          response.status
+        );
+        throw new Error(`Failed to fetch leads: ${response.status}`);
+      }
+
       const data = await response.json();
       setLeads(data.leads);
       setPagination((prev) => ({
@@ -52,7 +73,27 @@ export default function LeadsManagement() {
         total: data.total,
         pages: Math.ceil(data.total / prev.limit),
       }));
-    } catch (_error) {
+    } catch (error) {
+      if (error instanceof TypeError && error.message.includes("fetch")) {
+        logNetworkError(error, "/api/leads", {
+          status: selectedStatus,
+          page: pagination.page,
+          limit: pagination.limit,
+          searchTerm,
+        });
+      } else {
+        logDataFetchError(
+          error instanceof Error ? error : String(error),
+          "admin_leads",
+          undefined,
+          {
+            status: selectedStatus,
+            page: pagination.page,
+            limit: pagination.limit,
+            searchTerm,
+          }
+        );
+      }
       addToast({
         title: "Failed to fetch leads",
         color: "danger",
@@ -75,6 +116,12 @@ export default function LeadsManagement() {
 
       if (!response.ok) {
         const error = await response.json();
+        logApiError(
+          error.message || "Failed to convert lead",
+          `/api/leads/${leadId}/convert`,
+          { leadId },
+          response.status
+        );
         throw new Error(error.message || "Failed to convert lead");
       }
 
@@ -84,7 +131,15 @@ export default function LeadsManagement() {
       });
       await fetchLeads(); // Refresh leads list
     } catch (error) {
-      console.error("Error converting lead:", error);
+      if (error instanceof TypeError && error.message.includes("fetch")) {
+        logNetworkError(error, `/api/leads/${leadId}/convert`, { leadId });
+      } else {
+        logDataFetchError(
+          error instanceof Error ? error : String(error),
+          "convert_lead",
+          leadId
+        );
+      }
       const errorMessage =
         error instanceof Error
           ? error.message

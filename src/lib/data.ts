@@ -1,5 +1,11 @@
 import type { BlogPost, BlogCategory } from "@/types/blog";
 import type { Country } from "@/types/education";
+import {
+  logApiError,
+  logDataFetchError,
+  log404Error,
+  logNetworkError,
+} from "@/utils/errorUtils";
 
 const API_BASE_URL =
   process.env.NEXT_PUBLIC_API_URL ||
@@ -50,7 +56,16 @@ export async function getAllBlogPosts(options?: {
     const data = await handleApiResponse<{ posts: BlogPost[] }>(response);
     return data.posts.map(addComputedFields);
   } catch (error) {
-    console.error("Error fetching blog posts:", error);
+    if (error instanceof TypeError && error.message.includes("fetch")) {
+      logNetworkError(error, `/api/blog`, options);
+    } else {
+      logDataFetchError(
+        error instanceof Error ? error : String(error),
+        "blog_posts",
+        undefined,
+        options
+      );
+    }
     return [];
   }
 }
@@ -90,13 +105,24 @@ export async function getBlogPostById(id: string): Promise<BlogPost | null> {
     });
 
     if (response.status === 404) {
+      log404Error("blog_post", id, {
+        endpoint: `/api/blog/${id}`,
+      });
       return null;
     }
 
     const post = await handleApiResponse<BlogPost>(response);
     return addComputedFields(post);
   } catch (error) {
-    console.error("Error fetching blog post:", error);
+    if (error instanceof TypeError && error.message.includes("fetch")) {
+      logNetworkError(error, `/api/blog/${id}`, { id });
+    } else {
+      logDataFetchError(
+        error instanceof Error ? error : String(error),
+        "blog_post",
+        id
+      );
+    }
     return null;
   }
 }
@@ -120,7 +146,16 @@ export async function getRelatedBlogPosts(
     const posts = await handleApiResponse<BlogPost[]>(response);
     return posts.map(addComputedFields);
   } catch (error) {
-    console.error("Error fetching related blog posts:", error);
+    if (error instanceof TypeError && error.message.includes("fetch")) {
+      logNetworkError(error, `/api/blog/related/${postId}`, { postId, limit });
+    } else {
+      logDataFetchError(
+        error instanceof Error ? error : String(error),
+        "related_blog_posts",
+        postId,
+        { limit }
+      );
+    }
     return [];
   }
 }
@@ -137,7 +172,14 @@ export async function getBlogCategories(): Promise<BlogCategory[]> {
 
     return await handleApiResponse<BlogCategory[]>(response);
   } catch (error) {
-    console.error("Error fetching blog categories:", error);
+    if (error instanceof TypeError && error.message.includes("fetch")) {
+      logNetworkError(error, `/api/blog/categories`);
+    } else {
+      logDataFetchError(
+        error instanceof Error ? error : String(error),
+        "blog_categories"
+      );
+    }
     return [{ id: "all", name: "All" }];
   }
 }
@@ -207,7 +249,9 @@ export async function getCountries(): Promise<string[]> {
     });
 
     if (!response.ok) {
-      throw new Error(`Failed to fetch countries: ${response.status}`);
+      const errorMessage = `Failed to fetch countries: ${response.status}`;
+      logApiError(errorMessage, "/api/countries", undefined, response.status);
+      throw new Error(errorMessage);
     }
 
     const data = await response.json();
@@ -220,7 +264,14 @@ export async function getCountries(): Promise<string[]> {
         country.name.toLowerCase().replace(/\s+/g, "-")
     );
   } catch (error) {
-    console.error("Error fetching countries:", error);
+    if (error instanceof TypeError && error.message.includes("fetch")) {
+      logNetworkError(error, `/api/countries`);
+    } else {
+      logDataFetchError(
+        error instanceof Error ? error : String(error),
+        "countries"
+      );
+    }
     return [];
   }
 }

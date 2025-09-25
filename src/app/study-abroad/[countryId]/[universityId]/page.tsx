@@ -3,6 +3,12 @@ import { notFound } from "next/navigation";
 import { StructuredData } from "@/components/structured-data";
 import { generateBreadcrumbSchema } from "@/lib/structured-data";
 import { UniversityPageClient } from "./university-page-client";
+import {
+  logApiError,
+  logDataFetchError,
+  log404Error,
+  logNetworkError,
+} from "@/utils/errorUtils";
 
 // Force this page to be dynamic
 export const dynamic = "force-dynamic";
@@ -17,46 +23,48 @@ interface UniversityPageProps {
 // Helper function to fetch university data from API
 async function getUniversityData(universitySlug: string) {
   try {
-    // First try to get by MongoDB ObjectId (backward compatibility)
-    if (universitySlug.match(/^[0-9a-fA-F]{24}$/)) {
-      const response = await fetch(
-        `${
-          process.env.NEXT_PUBLIC_BASE_URL || "http://localhost:3000"
-        }/api/universities/${universitySlug}`,
-        {
-          cache: "no-store",
-        }
-      );
-      const data = await response.json();
-      if (data.university) return data.university;
-    }
-
-    // Get all universities and find by slug
+    // Use direct API call to fetch specific university data
+    const baseUrl = process.env.NEXT_PUBLIC_BASE_URL || "http://localhost:3000";
     const response = await fetch(
-      `${
-        process.env.NEXT_PUBLIC_BASE_URL || "http://localhost:3000"
-      }/api/universities?populate=true`,
+      `${baseUrl}/api/universities/${universitySlug}`,
       {
         cache: "no-store",
       }
     );
-    const data = await response.json();
-    const universities = data.universities || [];
 
-    // Import slug utilities
-    const { generateUniversitySlug } = await import("@/lib/slug-utils");
-
-    // Find university by matching slug
-    for (const university of universities) {
-      const slug = generateUniversitySlug(university.name);
-      if (slug === universitySlug) {
-        return university;
-      }
+    if (response.ok) {
+      const data = await response.json();
+      return data.university;
     }
 
-    return null;
+    if (response.status === 404) {
+      log404Error("university", universitySlug);
+      return null;
+    }
+
+    // Handle other HTTP errors
+    const errorMessage = `API returned ${response.status}: ${response.statusText}`;
+    logApiError(
+      errorMessage,
+      `/api/universities/${universitySlug}`,
+      { universitySlug },
+      response.status
+    );
+    throw new Error(errorMessage);
   } catch (error) {
-    console.error("Error fetching university data:", error);
+    if (error instanceof TypeError && error.message.includes("fetch")) {
+      // Network error
+      logNetworkError(error, `/api/universities/${universitySlug}`, {
+        universitySlug,
+      });
+    } else {
+      // Other errors
+      logDataFetchError(
+        error instanceof Error ? error : String(error),
+        "university",
+        universitySlug
+      );
+    }
     return null;
   }
 }
@@ -64,18 +72,53 @@ async function getUniversityData(universitySlug: string) {
 // Helper function to fetch courses for a university
 async function getCoursesForUniversity(universityId: string) {
   try {
+    const baseUrl = process.env.NEXT_PUBLIC_BASE_URL || "http://localhost:3000";
     const response = await fetch(
-      `${
-        process.env.NEXT_PUBLIC_BASE_URL || "http://localhost:3000"
-      }/api/courses?universityId=${universityId}&populate=true`,
+      `${baseUrl}/api/courses?universityId=${universityId}&populate=true`,
       {
         cache: "no-store", // Ensure fresh data
       }
     );
-    const data = await response.json();
-    return data.courses || [];
+
+    if (response.ok) {
+      const data = await response.json();
+      return data.courses || [];
+    }
+
+    if (response.status === 404) {
+      // University exists but has no courses - this is valid
+      log404Error("courses", `universityId=${universityId}`);
+      return [];
+    }
+
+    // Handle other HTTP errors
+    const errorMessage = `API returned ${response.status}: ${response.statusText}`;
+    logApiError(
+      errorMessage,
+      `/api/courses?universityId=${universityId}`,
+      { universityId },
+      response.status
+    );
+
+    // Return empty array for courses to allow page to render with university data
+    return [];
   } catch (error) {
-    console.error("Error fetching courses:", error);
+    if (error instanceof TypeError && error.message.includes("fetch")) {
+      // Network error
+      logNetworkError(error, `/api/courses?universityId=${universityId}`, {
+        universityId,
+      });
+    } else {
+      // Other errors
+      logDataFetchError(
+        error instanceof Error ? error : String(error),
+        "courses",
+        universityId,
+        { universityId }
+      );
+    }
+
+    // Return empty array to allow page to render with university data even if courses fail
     return [];
   }
 }

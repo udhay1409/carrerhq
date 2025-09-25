@@ -10,6 +10,11 @@ import { Icon } from "@iconify/react";
 import { motion } from "framer-motion";
 import { generateCountrySlug } from "@/lib/slug-utils";
 import type { Country, Course } from "@/types/education";
+import {
+  logDataFetchError,
+  logNetworkError,
+  logApiError,
+} from "@/utils/errorUtils";
 
 interface SearchBarProps {
   variant?: "default" | "hero";
@@ -39,9 +44,29 @@ export const SearchBar: React.FC<SearchBarProps> = ({
           fetch("/api/courses?limit=50"),
         ]);
 
+        // Check countries response
+        if (!countriesRes.ok) {
+          logApiError(
+            `Failed to fetch countries for search: ${countriesRes.status}`,
+            "/api/countries",
+            undefined,
+            countriesRes.status
+          );
+        }
+
+        // Check courses response
+        if (!coursesRes.ok) {
+          logApiError(
+            `Failed to fetch courses for search: ${coursesRes.status}`,
+            "/api/courses",
+            { limit: 50 },
+            coursesRes.status
+          );
+        }
+
         const [countriesData, coursesData] = await Promise.all([
-          countriesRes.json(),
-          coursesRes.json(),
+          countriesRes.ok ? countriesRes.json() : { countries: [] },
+          coursesRes.ok ? coursesRes.json() : { courses: [] },
         ]);
 
         if (countriesData.countries) {
@@ -64,7 +89,22 @@ export const SearchBar: React.FC<SearchBarProps> = ({
           setCourses(courseOptions);
         }
       } catch (error) {
-        console.error("Error fetching data:", error);
+        if (error instanceof TypeError && error.message.includes("fetch")) {
+          logNetworkError(error, "/api/countries or /api/courses", {
+            countriesEndpoint: "/api/countries",
+            coursesEndpoint: "/api/courses?limit=50",
+          });
+        } else {
+          logDataFetchError(
+            error instanceof Error ? error : String(error),
+            "search_data",
+            undefined,
+            {
+              countriesEndpoint: "/api/countries",
+              coursesEndpoint: "/api/courses?limit=50",
+            }
+          );
+        }
       } finally {
         setLoading(false);
       }

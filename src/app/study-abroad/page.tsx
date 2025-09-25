@@ -10,6 +10,11 @@ import { CountryCard } from "@/components/country-card";
 import { SearchBar } from "@/components/search-bar";
 import { EnquiryForm, EnquiryFormHandle } from "@/components/enquiry-form";
 import type { Country } from "@/types/education";
+import {
+  logDataFetchError,
+  logNetworkError,
+  logApiError,
+} from "@/utils/errorUtils";
 
 // Extended Country interface for API response with counts
 interface CountryWithCounts extends Country {
@@ -29,12 +34,32 @@ export default function StudyAbroadPage() {
       try {
         setLoading(true);
         const response = await fetch("/api/countries?includeCounts=true");
+
+        if (!response.ok) {
+          logApiError(
+            `Failed to fetch countries for study-abroad page: ${response.status}`,
+            "/api/countries",
+            { includeCounts: true },
+            response.status
+          );
+          return;
+        }
+
         const data = await response.json();
         if (data.countries) {
           setCountries(data.countries);
         }
       } catch (error) {
-        console.error("Error fetching countries:", error);
+        if (error instanceof TypeError && error.message.includes("fetch")) {
+          logNetworkError(error, "/api/countries", { includeCounts: true });
+        } else {
+          logDataFetchError(
+            error instanceof Error ? error : String(error),
+            "study_abroad_countries",
+            undefined,
+            { includeCounts: true }
+          );
+        }
       } finally {
         setLoading(false);
       }

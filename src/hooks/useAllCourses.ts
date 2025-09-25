@@ -1,6 +1,11 @@
 "use client";
 import { useState, useEffect } from "react";
 import { Course } from "../types/course";
+import {
+  logDataFetchError,
+  logNetworkError,
+  logApiError,
+} from "../utils/errorUtils";
 
 interface CoursesByCountry {
   [countryCode: string]: Course[];
@@ -22,8 +27,24 @@ export const useAllCourses = () => {
           fetch("/api/countries"),
         ]);
 
-        if (!coursesResponse.ok || !countriesResponse.ok) {
-          throw new Error("Failed to fetch courses or countries");
+        if (!coursesResponse.ok) {
+          logApiError(
+            `Failed to fetch courses: ${coursesResponse.status}`,
+            "/api/courses",
+            { populate: true },
+            coursesResponse.status
+          );
+          throw new Error("Failed to fetch courses");
+        }
+
+        if (!countriesResponse.ok) {
+          logApiError(
+            `Failed to fetch countries: ${countriesResponse.status}`,
+            "/api/countries",
+            undefined,
+            countriesResponse.status
+          );
+          throw new Error("Failed to fetch countries");
         }
 
         const [coursesData, countriesData] = await Promise.all([
@@ -228,7 +249,14 @@ export const useAllCourses = () => {
 
         setCoursesByCountry(allCourses);
       } catch (err) {
-        console.error("Error loading courses from API:", err);
+        if (err instanceof TypeError && err.message.includes("fetch")) {
+          logNetworkError(err, "/api/courses or /api/countries");
+        } else {
+          logDataFetchError(
+            err instanceof Error ? err : String(err),
+            "courses_and_countries"
+          );
+        }
         setError(err instanceof Error ? err.message : "Unknown error");
       } finally {
         setLoading(false);

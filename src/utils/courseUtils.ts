@@ -1,61 +1,66 @@
 import { Course } from "../types/course";
+import { logDataFetchError, log404Error, logNetworkError } from "./errorUtils";
 
 export async function getCourseDataForServer(
   _countrySlug: string,
   courseSlug: string
 ): Promise<Course | null> {
   try {
-    // First try to get by MongoDB ObjectId (backward compatibility)
-    if (courseSlug.match(/^[0-9a-fA-F]{24}$/)) {
-      const response = await fetch(
-        `${
-          process.env.NEXT_PUBLIC_BASE_URL || "http://localhost:3000"
-        }/api/courses/${courseSlug}?populate=true`,
-        {
-          cache: "no-store",
-        }
-      );
-
-      if (response.ok) {
-        const data = await response.json();
-        const course = data.course;
-        if (course) {
-          return transformCourseData(course);
-        }
-      }
-    }
-
-    // Get all courses and find by slug
+    // Use direct API call to fetch specific course by ID or slug
     const response = await fetch(
       `${
         process.env.NEXT_PUBLIC_BASE_URL || "http://localhost:3000"
-      }/api/courses?populate=true`,
+      }/api/courses/${courseSlug}?populate=true`,
       {
         cache: "no-store",
       }
     );
 
-    if (!response.ok) {
-      throw new Error(`Failed to fetch courses: ${response.status}`);
-    }
-
-    const data = await response.json();
-    const courses = data.courses || [];
-
-    // Import slug utilities
-    const { generateCourseSlug } = await import("@/lib/slug-utils");
-
-    // Find course by matching slug
-    for (const course of courses) {
-      const slug = generateCourseSlug(course.programName);
-      if (slug === courseSlug) {
+    if (response.ok) {
+      const data = await response.json();
+      const course = data.course;
+      if (course) {
         return transformCourseData(course);
       }
+
+      // Course data is null even with 200 response
+      log404Error("course", courseSlug, {
+        endpoint: `/api/courses/${courseSlug}`,
+        reason: "Course data is null in response",
+      });
+      return null;
     }
 
-    return null;
+    if (response.status === 404) {
+      // Log 404 as warning, not error - this is expected behavior
+      log404Error("course", courseSlug, {
+        endpoint: `/api/courses/${courseSlug}`,
+      });
+      return null;
+    }
+
+    // Handle other HTTP errors (5xx, etc.)
+    const errorMessage = `API Error: ${response.status} ${response.statusText}`;
+    logDataFetchError(errorMessage, "course", courseSlug, {
+      endpoint: `/api/courses/${courseSlug}`,
+      status: response.status,
+      statusText: response.statusText,
+    });
+
+    throw new Error(errorMessage);
   } catch (error) {
-    console.error(`Error loading course data: ${error}`);
+    if (error instanceof TypeError && error.message.includes("fetch")) {
+      // Network error
+      logNetworkError(error, `/api/courses/${courseSlug}`, { courseSlug });
+    } else {
+      // Other errors (parsing, etc.)
+      logDataFetchError(
+        error instanceof Error ? error : String(error),
+        "course",
+        courseSlug,
+        { endpoint: `/api/courses/${courseSlug}` }
+      );
+    }
     return null;
   }
 }

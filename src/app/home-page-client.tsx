@@ -22,6 +22,11 @@ import { AnimatedLogosCanopy } from "../components/ui/animated-logos-canopy";
 import type { BlogPost } from "@/types/blog";
 import type { CountryWithCounts, University } from "@/types/education";
 import { getImageUrl as getCloudinaryImageUrl } from "@/lib/cloudinary-utils";
+import {
+  logDataFetchError,
+  logNetworkError,
+  logApiError,
+} from "@/utils/errorUtils";
 
 interface HomePageClientProps {
   blogPosts: BlogPost[];
@@ -50,9 +55,29 @@ export function HomePageClient({ blogPosts }: HomePageClientProps) {
         fetch("/api/universities?populate=true&limit=8"),
       ]);
 
+      // Check countries response
+      if (!countriesRes.ok) {
+        logApiError(
+          `Failed to fetch countries for homepage: ${countriesRes.status}`,
+          "/api/countries",
+          { includeCounts: true },
+          countriesRes.status
+        );
+      }
+
+      // Check universities response
+      if (!universitiesRes.ok) {
+        logApiError(
+          `Failed to fetch universities for homepage: ${universitiesRes.status}`,
+          "/api/universities",
+          { populate: true, limit: 8 },
+          universitiesRes.status
+        );
+      }
+
       const [countriesData, universitiesData] = await Promise.all([
-        countriesRes.json(),
-        universitiesRes.json(),
+        countriesRes.ok ? countriesRes.json() : { countries: [] },
+        universitiesRes.ok ? universitiesRes.json() : { universities: [] },
       ]);
 
       // Set countries data (limit to top 4 for homepage)
@@ -65,7 +90,22 @@ export function HomePageClient({ blogPosts }: HomePageClientProps) {
         setUniversities(universitiesData.universities);
       }
     } catch (error) {
-      console.error("Error fetching homepage data:", error);
+      if (error instanceof TypeError && error.message.includes("fetch")) {
+        logNetworkError(error, "/api/countries or /api/universities", {
+          countriesParams: { includeCounts: true },
+          universitiesParams: { populate: true, limit: 8 },
+        });
+      } else {
+        logDataFetchError(
+          error instanceof Error ? error : String(error),
+          "homepage_data",
+          undefined,
+          {
+            countriesParams: { includeCounts: true },
+            universitiesParams: { populate: true, limit: 8 },
+          }
+        );
+      }
       // Keep empty arrays as fallback
     } finally {
       setLoading(false);

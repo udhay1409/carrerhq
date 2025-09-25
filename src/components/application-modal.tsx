@@ -5,6 +5,11 @@ import { Input, Textarea } from "@heroui/input";
 import { Button } from "@heroui/button";
 import { Icon } from "@iconify/react";
 import { addToast } from "@heroui/toast";
+import {
+  logDataFetchError,
+  logNetworkError,
+  logApiError,
+} from "@/utils/errorUtils";
 
 interface ApplicationModalProps {
   isOpen: boolean;
@@ -39,7 +44,7 @@ export function ApplicationModal({
 
     try {
       // Save lead to database
-      await fetch("/api/leads", {
+      const response = await fetch("/api/leads", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({
@@ -56,6 +61,20 @@ export function ApplicationModal({
           message: formData.message,
         }),
       });
+
+      if (!response.ok) {
+        logApiError(
+          `Failed to submit application: ${response.status}`,
+          "/api/leads",
+          {
+            country: courseDetails.country,
+            university: courseDetails.university,
+            program: courseDetails.programName,
+          },
+          response.status
+        );
+        throw new Error(`Failed to submit application: ${response.status}`);
+      }
 
       // Show success toast
       addToast({
@@ -75,7 +94,25 @@ export function ApplicationModal({
       });
 
       onClose();
-    } catch (_err) {
+    } catch (error) {
+      if (error instanceof TypeError && error.message.includes("fetch")) {
+        logNetworkError(error, "/api/leads", {
+          country: courseDetails.country,
+          university: courseDetails.university,
+          program: courseDetails.programName,
+        });
+      } else {
+        logDataFetchError(
+          error instanceof Error ? error : String(error),
+          "application_submission",
+          undefined,
+          {
+            country: courseDetails.country,
+            university: courseDetails.university,
+            program: courseDetails.programName,
+          }
+        );
+      }
       setError("Failed to submit application. Please try again.");
       addToast({
         title: "Failed to submit application",
