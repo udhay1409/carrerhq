@@ -1,5 +1,6 @@
 import mongoose, { Schema, type Document } from "mongoose";
 import type { Course } from "@/types/education";
+import { generateCourseSlug } from "@/lib/slug-utils";
 
 export interface ICourse
   extends Omit<
@@ -10,6 +11,7 @@ export interface ICourse
   _id: string;
   universityId: mongoose.Types.ObjectId;
   countryId: mongoose.Types.ObjectId;
+  slug?: string;
 }
 
 const CourseSchema = new Schema<ICourse>(
@@ -28,6 +30,10 @@ const CourseSchema = new Schema<ICourse>(
       type: String,
       required: true,
       trim: true,
+    },
+    slug: {
+      type: String,
+      unique: true,
     },
     studyLevel: {
       type: String,
@@ -159,7 +165,16 @@ const CourseSchema = new Schema<ICourse>(
   }
 );
 
+// Pre-save hook to generate slug from programName
+CourseSchema.pre("save", function (next) {
+  if (this.isModified("programName") || !this.slug) {
+    this.slug = generateCourseSlug(this.programName);
+  }
+  next();
+});
+
 // Create indexes for better query performance
+CourseSchema.index({ slug: 1 });
 CourseSchema.index({ programName: 1 });
 CourseSchema.index({ universityId: 1 });
 CourseSchema.index({ countryId: 1 });

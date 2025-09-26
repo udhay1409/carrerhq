@@ -25,6 +25,7 @@ export interface CountryWithCounts extends Country {
 export interface University {
   id: string;
   name: string;
+  slug?: string;
   countryId: string;
   location: string;
   website?: string;
@@ -52,6 +53,7 @@ export interface Course {
   universityId: string;
   countryId: string;
   programName: string;
+  slug?: string;
   studyLevel:
     | "Undergraduate"
     | "Postgraduate"
@@ -106,6 +108,7 @@ export interface CreateCountryData {
 
 export interface CreateUniversityData {
   name: string;
+  slug?: string;
   countryId: string;
   location: string;
   website?: string;
@@ -126,6 +129,7 @@ export interface CreateCourseData {
   universityId: string;
   countryId: string;
   programName: string;
+  slug?: string;
   studyLevel:
     | "Undergraduate"
     | "Postgraduate"

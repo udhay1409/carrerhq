@@ -6,9 +6,15 @@ import {
   deleteImageFromCloudinary,
 } from "@/lib/image-upload-utils";
 import { CreateUniversityData } from "@/types/education";
+import mongoose from "mongoose";
 
 interface RouteParams {
   params: Promise<{ id: string }>;
+}
+
+// Helper function to check if a string is a valid MongoDB ObjectId
+function isValidObjectId(id: string): boolean {
+  return mongoose.Types.ObjectId.isValid(id) && !!id.match(/^[0-9a-fA-F]{24}$/);
 }
 
 export async function GET(request: NextRequest, { params }: RouteParams) {
@@ -16,10 +22,36 @@ export async function GET(request: NextRequest, { params }: RouteParams) {
     await connectToDatabase();
 
     const { id } = await params;
-    const university = await University.findById(id).populate(
-      "countryId",
-      "name code flagImageId"
-    );
+    let university = null;
+
+    // First try direct ID lookup if it's a valid ObjectId
+    if (isValidObjectId(id)) {
+      university = await University.findById(id).populate(
+        "countryId",
+        "name code flagImageId"
+      );
+    }
+
+    // If not found by ID or not a valid ObjectId, try slug lookup
+    if (!university) {
+      university = await University.findOne({ slug: id }).populate(
+        "countryId",
+        "name code flagImageId"
+      );
+    }
+
+    // If still not found by slug, try to find by name (for backward compatibility)
+    if (!university) {
+      // Convert slug back to potential name format for fallback
+      const potentialName = id
+        .split("-")
+        .map((word) => word.charAt(0).toUpperCase() + word.slice(1))
+        .join(" ");
+
+      university = await University.findOne({
+        name: { $regex: new RegExp(`^${potentialName}$`, "i") },
+      }).populate("countryId", "name code flagImageId");
+    }
 
     if (!university) {
       return NextResponse.json(
@@ -69,8 +101,29 @@ export async function PUT(request: NextRequest, { params }: RouteParams) {
       data = await request.json();
     }
 
-    // Find the existing university
-    const existingUniversity = await University.findById(id);
+    // Find the existing university by ID or slug
+    let existingUniversity = null;
+
+    if (isValidObjectId(id)) {
+      existingUniversity = await University.findById(id);
+    }
+
+    if (!existingUniversity) {
+      existingUniversity = await University.findOne({ slug: id });
+    }
+
+    // Fallback to name-based search if slug not found
+    if (!existingUniversity) {
+      const potentialName = id
+        .split("-")
+        .map((word) => word.charAt(0).toUpperCase() + word.slice(1))
+        .join(" ");
+
+      existingUniversity = await University.findOne({
+        name: { $regex: new RegExp(`^${potentialName}$`, "i") },
+      });
+    }
+
     if (!existingUniversity) {
       return NextResponse.json(
         { error: "University not found" },
@@ -88,11 +141,15 @@ export async function PUT(request: NextRequest, { params }: RouteParams) {
       data.imageId = newImageId;
     }
 
-    // Update the university
-    const university = await University.findByIdAndUpdate(id, data, {
-      new: true,
-      runValidators: true,
-    }).populate("countryId", "name code flagImageId");
+    // Update the university using the actual _id
+    const university = await University.findByIdAndUpdate(
+      existingUniversity._id,
+      data,
+      {
+        new: true,
+        runValidators: true,
+      }
+    ).populate("countryId", "name code flagImageId");
 
     // Transform the data to match the expected interface
     const universityResponse = {
@@ -117,8 +174,29 @@ export async function DELETE(request: NextRequest, { params }: RouteParams) {
 
     const { id } = await params;
 
-    // Find the university first to get the image ID
-    const university = await University.findById(id);
+    // Find the university by ID or slug first to get the image ID
+    let university = null;
+
+    if (isValidObjectId(id)) {
+      university = await University.findById(id);
+    }
+
+    if (!university) {
+      university = await University.findOne({ slug: id });
+    }
+
+    // Fallback to name-based search if slug not found
+    if (!university) {
+      const potentialName = id
+        .split("-")
+        .map((word) => word.charAt(0).toUpperCase() + word.slice(1))
+        .join(" ");
+
+      university = await University.findOne({
+        name: { $regex: new RegExp(`^${potentialName}$`, "i") },
+      });
+    }
+
     if (!university) {
       return NextResponse.json(
         { error: "University not found" },
@@ -131,8 +209,8 @@ export async function DELETE(request: NextRequest, { params }: RouteParams) {
       await deleteImageFromCloudinary(university.imageId);
     }
 
-    // Delete the university from database
-    await University.findByIdAndDelete(id);
+    // Delete the university from database using the actual _id
+    await University.findByIdAndDelete(university._id);
 
     return NextResponse.json({ message: "University deleted successfully" });
   } catch (error) {

@@ -1,11 +1,13 @@
 import mongoose, { Schema, type Document } from "mongoose";
 import type { University } from "@/types/education";
+import { generateUniversitySlug } from "@/lib/slug-utils";
 
 export interface IUniversity
   extends Omit<University, "id" | "country" | "countryId">,
     Document {
   _id: string;
   countryId: mongoose.Types.ObjectId;
+  slug?: string;
 }
 
 const UniversitySchema = new Schema<IUniversity>(
@@ -14,6 +16,11 @@ const UniversitySchema = new Schema<IUniversity>(
       type: String,
       required: true,
       trim: true,
+    },
+    slug: {
+      type: String,
+      unique: true,
+      sparse: true, // Allow null values but ensure uniqueness when present
     },
     countryId: {
       type: Schema.Types.ObjectId,
@@ -93,8 +100,16 @@ const UniversitySchema = new Schema<IUniversity>(
   }
 );
 
+// Pre-save middleware to generate slug
+UniversitySchema.pre("save", function (next) {
+  if (this.isModified("name") || !this.slug) {
+    this.slug = generateUniversitySlug(this.name);
+  }
+  next();
+});
+
 // Create indexes for better query performance
-// Note: name field already has unique index, other indexes added below
+// Note: slug field already has unique index from schema definition
 UniversitySchema.index({ countryId: 1 });
 UniversitySchema.index({ ranking: 1 });
 UniversitySchema.index({ type: 1 });
