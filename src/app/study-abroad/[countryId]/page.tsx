@@ -25,26 +25,50 @@ async function getCountryData(countrySlug: string) {
     "@/utils/errorUtils"
   );
 
+  const baseUrl =
+    process.env.NEXT_PUBLIC_BASE_URL ||
+    process.env.NEXT_PUBLIC_API_URL ||
+    "http://localhost:3000";
+  const apiUrl = `${baseUrl}/api/countries/${countrySlug}`;
+
+  // Enhanced logging for debugging
+  console.log("🔍 Fetching country data:", {
+    countrySlug,
+    baseUrl,
+    apiUrl,
+    environment: process.env.NODE_ENV,
+    timestamp: new Date().toISOString(),
+  });
+
   try {
     // Use direct API call to the single country endpoint
-    const response = await fetch(
-      `${
-        process.env.NEXT_PUBLIC_BASE_URL || "http://localhost:3000"
-      }/api/countries/${countrySlug}`,
-      {
-        cache: "no-store", // Ensure fresh data on every request
-        headers: {
-          "Cache-Control": "no-cache, no-store, must-revalidate",
-        },
-      }
-    );
+    const response = await fetch(apiUrl, {
+      cache: "no-store", // Ensure fresh data on every request
+      headers: {
+        "Cache-Control": "no-cache, no-store, must-revalidate",
+      },
+    });
+
+    console.log("📡 API Response:", {
+      status: response.status,
+      statusText: response.statusText,
+      ok: response.ok,
+      url: response.url,
+      headers: Object.fromEntries(response.headers.entries()),
+    });
 
     if (response.ok) {
       const data = await response.json();
+      console.log("✅ Country data received:", {
+        countryName: data.country?.name,
+        countryId: data.country?.id,
+        hasData: !!data.country,
+      });
       return data.country;
     }
 
     if (response.status === 404) {
+      console.log("❌ Country not found (404):", countrySlug);
       log404Error("Country", countrySlug, {
         endpoint: `/api/countries/${countrySlug}`,
         status: response.status,
@@ -53,19 +77,39 @@ async function getCountryData(countrySlug: string) {
     }
 
     // Handle other HTTP errors (5xx, etc.)
-    const errorMessage = `API Error: ${response.status} ${response.statusText}`;
+    const errorText = await response
+      .text()
+      .catch(() => "Unable to read error response");
+    const errorMessage = `API Error: ${response.status} ${response.statusText} - ${errorText}`;
+
+    console.error("🚨 API Error:", {
+      status: response.status,
+      statusText: response.statusText,
+      errorText,
+      url: apiUrl,
+    });
+
     logDataFetchError(errorMessage, "Country", countrySlug, {
       endpoint: `/api/countries/${countrySlug}`,
       status: response.status,
       statusText: response.statusText,
+      errorText,
     });
 
     throw new Error(errorMessage);
   } catch (error) {
+    console.error("💥 Fetch error:", {
+      error: error instanceof Error ? error.message : String(error),
+      stack: error instanceof Error ? error.stack : undefined,
+      countrySlug,
+      apiUrl,
+    });
+
     if (error instanceof TypeError && error.message.includes("fetch")) {
       // Network error
       logNetworkError(error, `/api/countries/${countrySlug}`, {
         countrySlug,
+        apiUrl,
       });
     } else {
       // Other errors
@@ -75,6 +119,7 @@ async function getCountryData(countrySlug: string) {
         countrySlug,
         {
           endpoint: `/api/countries/${countrySlug}`,
+          apiUrl,
         }
       );
     }

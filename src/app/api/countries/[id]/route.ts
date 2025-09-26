@@ -13,43 +13,97 @@ interface RouteParams {
 }
 
 export async function GET(_request: NextRequest, { params }: RouteParams) {
+  const startTime = Date.now();
+  let countryId: string | undefined;
+
   try {
+    console.log("🔍 API: Starting country lookup", {
+      timestamp: new Date().toISOString(),
+      environment: process.env.NODE_ENV,
+    });
+
     await connectToDatabase();
+    console.log("✅ Database connected successfully");
 
     const { id } = await params;
+    countryId = id;
+
+    console.log("📝 API: Processing request", {
+      countryId: id,
+      idType: typeof id,
+      idLength: id?.length,
+      trimmed: id?.trim(),
+    });
 
     // Validate route parameter (Requirement 4.1)
     if (!id || typeof id !== "string" || id.trim() === "") {
+      console.log("❌ Invalid country identifier provided:", id);
       return NextResponse.json(
         { error: "Invalid country identifier provided" },
         { status: 400 }
       );
     }
 
+    const trimmedId = id.trim();
+    console.log("🔎 Looking up country:", {
+      originalId: id,
+      trimmedId,
+      isObjectId: trimmedId.match(/^[0-9a-fA-F]{24}$/),
+    });
+
     // Use the utility function to find by either ID or slug (Requirements 5.1, 5.2)
-    const country = await findEntityBySlugOrId(Country, id.trim(), "name");
+    const country = await findEntityBySlugOrId(Country, trimmedId, "name");
+
+    console.log("🔍 Country lookup result:", {
+      found: !!country,
+      countryName: country?.name,
+      countryId: country?._id || country?.id,
+      published: country?.published,
+    });
 
     // Return 404 if country not found (Requirements 1.2, 4.2, 5.4)
     if (!country) {
+      console.log("❌ Country not found in database:", trimmedId);
       return NextResponse.json({ error: "Country not found" }, { status: 404 });
     }
 
     // Only return published countries unless explicitly requested
     if (country.published === false) {
+      console.log("❌ Country found but not published:", {
+        countryName: country.name,
+        published: country.published,
+      });
       return NextResponse.json({ error: "Country not found" }, { status: 404 });
     }
 
+    const responseTime = Date.now() - startTime;
+    console.log("✅ Country found and returned:", {
+      countryName: country.name,
+      responseTime: `${responseTime}ms`,
+    });
+
     return NextResponse.json({ country });
   } catch (error) {
-    // Log error with appropriate context (Requirement 4.1, 4.3)
-    console.error("Error fetching country:", {
+    const responseTime = Date.now() - startTime;
+
+    // Enhanced error logging with more context
+    console.error("💥 API Error fetching country:", {
       error: error instanceof Error ? error.message : String(error),
-      countryId: (await params).id,
+      stack: error instanceof Error ? error.stack : undefined,
+      countryId,
+      responseTime: `${responseTime}ms`,
       timestamp: new Date().toISOString(),
+      environment: process.env.NODE_ENV,
+      mongoUri: process.env.MONGODB_URI ? "SET" : "NOT_SET",
     });
 
     return NextResponse.json(
-      { error: "Failed to fetch country" },
+      {
+        error: "Failed to fetch country",
+        ...(process.env.NODE_ENV === "development" && {
+          details: error instanceof Error ? error.message : String(error),
+        }),
+      },
       { status: 500 }
     );
   }

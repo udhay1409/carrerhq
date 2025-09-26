@@ -32,32 +32,66 @@ export async function findEntityBySlugOrId<T extends Record<string, unknown>>(
   nameField: string = "name"
 ): Promise<T | null> {
   try {
+    console.log("🔍 findEntityBySlugOrId:", {
+      slugOrId,
+      nameField,
+      isObjectId: slugOrId.match(/^[0-9a-fA-F]{24}$/),
+    });
+
     // First try to find by MongoDB ObjectId (Requirement 5.1)
     if (slugOrId.match(/^[0-9a-fA-F]{24}$/)) {
-      return await model.findById(slugOrId);
+      console.log("🔎 Searching by ObjectId:", slugOrId);
+      const result = await model.findById(slugOrId);
+      console.log("📝 ObjectId search result:", !!result);
+      return result;
     }
 
     // Try to find by slug field first (Requirement 5.2)
+    console.log("🔎 Searching by slug field:", slugOrId);
     const bySlug = await model.findOne({ slug: slugOrId });
+    console.log("📝 Slug field search result:", !!bySlug);
     if (bySlug) {
       return bySlug;
     }
 
     // Fallback: try to find by matching slug generated from name
     // This is for backward compatibility with existing data that might not have slug field
-    const byGeneratedSlug = await model.findOne({
-      [nameField]: {
-        $regex: new RegExp(`^${slugOrId.replace(/-/g, "\\s+")}$`, "i"),
-      },
+    const nameRegex = new RegExp(`^${slugOrId.replace(/-/g, "\\s+")}$`, "i");
+    console.log("🔎 Searching by name regex:", {
+      pattern: nameRegex.source,
+      flags: nameRegex.flags,
+      originalSlug: slugOrId,
     });
+
+    const byGeneratedSlug = await model.findOne({
+      [nameField]: { $regex: nameRegex },
+    });
+    console.log("📝 Name regex search result:", !!byGeneratedSlug);
 
     if (byGeneratedSlug) {
       return byGeneratedSlug;
     }
 
+    // Additional fallback: try exact name match
+    console.log("🔎 Searching by exact name match:", slugOrId);
+    const byExactName = await model.findOne({
+      [nameField]: { $regex: new RegExp(`^${slugOrId}$`, "i") },
+    });
+    console.log("📝 Exact name search result:", !!byExactName);
+
+    if (byExactName) {
+      return byExactName;
+    }
+
+    console.log("❌ No entity found for:", slugOrId);
     return null;
   } catch (error) {
-    console.error("Error finding entity by slug or ID:", error);
+    console.error("💥 Error finding entity by slug or ID:", {
+      error: error instanceof Error ? error.message : String(error),
+      stack: error instanceof Error ? error.stack : undefined,
+      slugOrId,
+      nameField,
+    });
     return null;
   }
 }
