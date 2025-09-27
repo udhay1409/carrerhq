@@ -1,6 +1,8 @@
 "use client";
 
 import { useState, useEffect, useCallback } from "react"; // Add useCallback import
+import Image from "next/image";
+import { getImageUrl } from "@/lib/cloudinary-utils";
 import {
   Table,
   TableHeader,
@@ -474,8 +476,21 @@ export function CourseManagement() {
               <TableCell>{course.university?.name}</TableCell>
               <TableCell>
                 <div className="flex items-center gap-2">
-                  {course.country?.flagImageId && (
-                    <span>{course.country.flagImageId}</span>
+                  {course.country?.flagImageId ? (
+                    <div className="w-6 h-4 relative rounded overflow-hidden">
+                      <Image
+                        src={getImageUrl(
+                          course.country.flagImageId,
+                          "thumbnail"
+                        )}
+                        alt={`${course.country.name} flag`}
+                        fill
+                        className="object-cover"
+                        sizes="24px"
+                      />
+                    </div>
+                  ) : (
+                    <span className="text-gray-400 text-xs">🏳️</span>
                   )}
                   <span>{course.country?.name}</span>
                 </div>
