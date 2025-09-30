@@ -99,17 +99,20 @@ export function BlogSlider({ items }: BlogSliderProps) {
                 x: `${-currentIndex * (100 / itemsToShow)}%`,
               }}
               transition={{ duration: 0.7, ease: [0.32, 0.72, 0, 1] }}
-              style={{
-                width: `${(blogItems.length / itemsToShow) * 100}%`,
-              }}
             >
-              {blogItems.map((item, index) => (
+              {blogItems.map((item) => (
                 <motion.a
                   key={item.id}
                   href={item.link}
                   className="flex-shrink-0 block px-3 sm:px-4 md:px-6 py-2 sm:py-3 text-white hover:bg-white/10 rounded-lg transition-all duration-300"
                   style={{
-                    width: `${100 / blogItems.length}%`,
+                    width: `calc(${100 / itemsToShow}% - ${
+                      itemsToShow === 1
+                        ? "0.5rem"
+                        : itemsToShow === 2
+                        ? "1rem"
+                        : "2rem"
+                    })`,
                   }}
                   whileHover={{ scale: 1.02, x: 4 }}
                   whileTap={{ scale: 0.98 }}
@@ -131,19 +134,6 @@ export function BlogSlider({ items }: BlogSliderProps) {
               <ChevronRight className="w-4 h-4 sm:w-5 sm:h-5" />
             </button>
           )}
-
-          {/* <div className="flex-shrink-0 flex space-x-2 ml-6">
-            {Array.from({ length: maxIndex + 1 }).map((_, index) => (
-              <button
-                key={index}
-                onClick={() => setCurrentIndex(index)}
-                className={`w-2 h-2 rounded-full transition-all duration-300 transform hover:scale-125 ${
-                  currentIndex === index ? "bg-white scale-110" : "bg-white/40"
-                }`}
-                aria-label={`Go to slide ${index + 1}`}
-              />
-            ))}
-          </div> */}
         </div>
       </div>
     </div>
