@@ -5,7 +5,6 @@ import { Button } from "@heroui/button";
 import { Card, CardBody } from "@heroui/card";
 import { Icon } from "@iconify/react";
 import { motion } from "framer-motion";
-import { Tabs, Tab } from "@heroui/tabs";
 import { CountryCard } from "@/components/country-card";
 import { SearchBar } from "@/components/search-bar";
 import { EnquiryForm, EnquiryFormHandle } from "@/components/enquiry-form";
@@ -24,7 +23,6 @@ interface CountryWithCounts extends Country {
 
 export default function StudyAbroadPage() {
   const enquiryRef = React.useRef<EnquiryFormHandle | null>(null);
-  const [selected, setSelected] = React.useState("all");
   const [countries, setCountries] = React.useState<CountryWithCounts[]>([]);
   const [loading, setLoading] = React.useState(true);
 
@@ -68,32 +66,6 @@ export default function StudyAbroadPage() {
     fetchCountries();
   }, []);
 
-  const regions = [
-    { id: "all", name: "All Regions" },
-    { id: "north-america", name: "North America" },
-    { id: "europe", name: "Europe" },
-    { id: "asia-pacific", name: "Asia Pacific" },
-    { id: "middle-east", name: "Middle East" },
-  ];
-
-  const filteredCountries = React.useMemo(() => {
-    if (selected === "all") return countries;
-
-    // Region mapping based on country codes
-    const regionMap: Record<string, string[]> = {
-      "north-america": ["US", "CA"],
-      europe: ["GB", "UK", "DE", "FR", "IE"],
-      "asia-pacific": ["AU", "NZ"],
-      "middle-east": [],
-    };
-
-    return countries.filter((country) => {
-      const countryCode =
-        country.code?.toUpperCase() || country.id?.toUpperCase();
-      return regionMap[selected]?.includes(countryCode);
-    });
-  }, [selected, countries]);
-
   const benefits = [
     {
       title: "Global Recognition",
@@ -134,9 +106,6 @@ export default function StudyAbroadPage() {
   ];
 
   // wrapper to adapt Tabs onSelectionChange typing (Key can be number|string) -> we store string keys
-  const handleTabChange = (key: React.Key) => {
-    setSelected(String(key));
-  };
 
   return (
     <>
@@ -184,18 +153,6 @@ export default function StudyAbroadPage() {
                 Explore top countries for international education
               </p>
             </div>
-            <Tabs
-              selectedKey={selected}
-              onSelectionChange={handleTabChange}
-              variant="light"
-              color="primary"
-              radius="full"
-              className="mt-4 md:mt-0"
-            >
-              {regions.map((region) => (
-                <Tab key={region.id} title={region.name} />
-              ))}
-            </Tabs>
           </div>
 
           <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-6">
@@ -212,8 +169,8 @@ export default function StudyAbroadPage() {
                   <div className="h-4 bg-gray-200 rounded w-1/2"></div>
                 </div>
               ))
-            ) : filteredCountries.length > 0 ? (
-              filteredCountries.map((country) => (
+            ) : countries.length > 0 ? (
+              countries.map((country) => (
                 <CountryCard
                   key={country.id}
                   id={country.code || country.id}
