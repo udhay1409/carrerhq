@@ -3,6 +3,7 @@ import { notFound } from "next/navigation";
 import { StructuredData } from "@/components/structured-data";
 import { generateBreadcrumbSchema } from "@/lib/structured-data";
 import { CountryPageClient } from "./country-page-client";
+import { getImageUrl as getCloudinaryImageUrl } from "@/lib/cloudinary-utils";
 
 // Force this page to be dynamic
 export const dynamic = "force-dynamic";
@@ -156,7 +157,7 @@ export async function generateMetadata({
     openGraph: {
       title: `Study in ${countryData.name} - Find Your Perfect Program`,
       description: `Discover world-class education opportunities in ${countryData.name}.`,
-      images: [countryData.imageId],
+      images: [getCloudinaryImageUrl(countryData.imageId)],
     },
   };
 }

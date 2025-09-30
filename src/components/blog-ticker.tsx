@@ -95,16 +95,22 @@ export function BlogSlider({ items }: BlogSliderProps) {
           <div className="flex-1 overflow-hidden">
             <motion.div
               className="flex gap-2 sm:gap-4 md:gap-8"
-              animate={{ x: -currentIndex * (100 / itemsToShow) + "%" }}
+              animate={{
+                x: `${-currentIndex * (100 / itemsToShow)}%`,
+              }}
               transition={{ duration: 0.7, ease: [0.32, 0.72, 0, 1] }}
-              style={{ width: `${(blogItems.length / itemsToShow) * 100}%` }}
+              style={{
+                width: `${(blogItems.length / itemsToShow) * 100}%`,
+              }}
             >
-              {blogItems.map((item) => (
+              {blogItems.map((item, index) => (
                 <motion.a
                   key={item.id}
                   href={item.link}
                   className="flex-shrink-0 block px-3 sm:px-4 md:px-6 py-2 sm:py-3 text-white hover:bg-white/10 rounded-lg transition-all duration-300"
-                  style={{ width: `${100 / blogItems.length}%` }}
+                  style={{
+                    width: `${100 / blogItems.length}%`,
+                  }}
                   whileHover={{ scale: 1.02, x: 4 }}
                   whileTap={{ scale: 0.98 }}
                 >

@@ -4,6 +4,7 @@ import { notFound } from "next/navigation";
 import { getBlogPostById, getRelatedBlogPosts } from "../../../lib/data";
 import { BlogPostClient } from "./blog-post-client";
 export const dynamic = "force-dynamic";
+import { getImageUrl as getCloudinaryImageUrl } from "@/lib/cloudinary-utils";
 
 interface BlogPostPageProps {
   params: Promise<{
@@ -38,7 +39,7 @@ export async function generateMetadata({
     openGraph: {
       title: post.title,
       description: post.excerpt,
-      images: [post.imageId],
+      images: [getCloudinaryImageUrl(post.imageId)],
       type: "article",
       authors: [post.author],
       publishedTime: post.date,
@@ -47,7 +48,7 @@ export async function generateMetadata({
       card: "summary_large_image",
       title: post.title,
       description: post.excerpt,
-      images: [post.imageId],
+      images: [getCloudinaryImageUrl(post.imageId)],
     },
   };
 }

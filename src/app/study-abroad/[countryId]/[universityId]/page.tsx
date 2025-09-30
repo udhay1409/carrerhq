@@ -9,6 +9,7 @@ import {
   log404Error,
   logNetworkError,
 } from "@/utils/errorUtils";
+import { getImageUrl as getCloudinaryImageUrl } from "@/lib/cloudinary-utils";
 
 // Force this page to be dynamic
 export const dynamic = "force-dynamic";
@@ -165,7 +166,10 @@ export async function generateMetadata({
     openGraph: {
       title: `${universityData.name} - Study in ${countryName}`,
       description: `Discover programs at ${universityData.name}. Get expert guidance for your international education journey.`,
-      images: [universityData.imageId || "/default-university-image.jpg"],
+      images: [
+        getCloudinaryImageUrl(universityData.imageId) ||
+          "/default-university-image.jpg",
+      ],
     },
   };
 }
