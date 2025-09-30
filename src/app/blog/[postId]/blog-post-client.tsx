@@ -8,7 +8,7 @@ import { Card, CardBody } from "@heroui/card";
 import { Divider } from "@heroui/divider";
 import { Breadcrumbs, BreadcrumbItem } from "@heroui/breadcrumbs";
 import { Chip } from "@heroui/chip";
-import { Input } from "@heroui/input";
+// import { Input } from "@heroui/input";
 import { Avatar } from "@heroui/avatar";
 import { Icon } from "@iconify/react";
 import { BlogCard } from "@/components/blog-card";
@@ -174,7 +174,7 @@ export const BlogPostClient: React.FC<BlogPostClientProps> = ({
             </div>
 
             <div className="lg:col-span-1">
-              <Card className="border border-default-200 sticky top-24">
+              <Card className="border border-default-200 ">
                 <CardBody className="p-6">
                   <h3 className="text-xl font-semibold mb-4">
                     Get Expert Guidance
@@ -238,7 +238,7 @@ export const BlogPostClient: React.FC<BlogPostClientProps> = ({
                 </div>
               )}
 
-              <div className="mt-8">
+              {/* <div className="mt-8">
                 <h3 className="text-xl font-semibold mb-4">Categories</h3>
                 <div className="flex flex-wrap gap-2">
                   {[
@@ -264,7 +264,7 @@ export const BlogPostClient: React.FC<BlogPostClientProps> = ({
                     </Chip>
                   ))}
                 </div>
-              </div>
+              </div> */}
             </div>
           </div>
         </div>
@@ -307,7 +307,7 @@ export const BlogPostClient: React.FC<BlogPostClientProps> = ({
       )}
 
       {/* Newsletter Section */}
-      <section className="py-16 bg-white">
+      {/* <section className="py-16 bg-white">
         <div className="container mx-auto px-4">
           <div className="max-w-3xl mx-auto text-center">
             <h2 className="text-3xl font-bold mb-3">
@@ -330,7 +330,7 @@ export const BlogPostClient: React.FC<BlogPostClientProps> = ({
             </div>
           </div>
         </div>
-      </section>
+      </section> */}
     </>
   );
 };

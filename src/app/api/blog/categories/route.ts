@@ -25,13 +25,13 @@ async function GET() {
     if (validCategories.length === 0) {
       const defaultCategories = [
         { id: "all", name: "All" },
-        { id: "study-abroad", name: "Study Abroad" },
-        { id: "scholarships", name: "Scholarships" },
-        { id: "visa", name: "Visa" },
-        { id: "application-tips", name: "Application Tips" },
-        { id: "student-life", name: "Student Life" },
-        { id: "career", name: "Career" },
-        { id: "test-preparation", name: "Test Preparation" },
+        // { id: "study-abroad", name: "Study Abroad" },
+        // { id: "scholarships", name: "Scholarships" },
+        // { id: "visa", name: "Visa" },
+        // { id: "application-tips", name: "Application Tips" },
+        // { id: "student-life", name: "Student Life" },
+        // { id: "career", name: "Career" },
+        // { id: "test-preparation", name: "Test Preparation" },
       ];
       return NextResponse.json(defaultCategories);
     }

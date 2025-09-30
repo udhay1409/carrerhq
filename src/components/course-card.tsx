@@ -95,7 +95,7 @@ function SafeCourseCard({
     intakeYear: course.intakeYear || new Date().getFullYear().toString(),
     ieltsScore: course.ieltsScore || 0,
     ieltsNoBandLessThan: course.ieltsNoBandLessThan || 0,
-    pteScore: course.pteScore,
+    pteScore: course.pteScore || 0,
     pteNoBandLessThan: course.pteNoBandLessThan,
     yearlyTuitionFees: course.yearlyTuitionFees || "Contact for fees",
     studyLevel: course.studyLevel || "Postgraduate",
@@ -204,12 +204,12 @@ function SafeCourseCard({
                     {safeData.ieltsNoBandLessThan})
                   </div>
                 )}
-                {safeData.pteScore && safeData.pteScore > 0 && (
+                {safeData?.pteScore > 0 && safeData?.pteNoBandLessThan ? (
                   <div>
                     PTE: {safeData.pteScore} (min{" "}
                     {safeData.pteNoBandLessThan || "N/A"})
                   </div>
-                )}
+                ) : null}
                 {safeData.toeflScore && safeData.toeflScore > 0 && (
                   <div>TOEFL: {safeData.toeflScore}</div>
                 )}

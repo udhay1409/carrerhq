@@ -149,7 +149,7 @@ export const CountryPageClient: React.FC<CountryPageClientProps> = ({
                   }}
                 />
               </div>
-              <div className="absolute -bottom-6 -right-6 w-32 h-32 bg-secondary-100 rounded-full z-0"></div>
+              <div className="absolute -bottom-6 -right-4 w-32 h-32 bg-secondary-100 rounded-full z-0"></div>
               <div className="absolute -top-6 -left-6 w-24 h-24 bg-primary-100 rounded-full z-0"></div>
             </motion.div>
           </div>

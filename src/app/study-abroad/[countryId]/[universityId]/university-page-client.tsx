@@ -248,7 +248,7 @@ export const UniversityPageClient: React.FC<UniversityPageClientProps> = ({
                   </div>
                 )}
               </div>
-              <div className="absolute -bottom-6 -right-6 w-32 h-32 bg-secondary-100 rounded-full z-0"></div>
+              <div className="absolute -bottom-6 -right-4 w-32 h-32 bg-secondary-100 rounded-full z-0"></div>
               <div className="absolute -top-6 -left-6 w-24 h-24 bg-primary-100 rounded-full z-0"></div>
             </motion.div>
           </div>
@@ -348,7 +348,10 @@ export const UniversityPageClient: React.FC<UniversityPageClientProps> = ({
               variant="light"
               color="primary"
               radius="full"
-              className="mt-4 md:mt-0"
+              className="mt-4 md:mt-0 "
+              classNames={{
+                base: "d-flex gap-[2px] sm-w-[300px] ",
+              }}
             >
               <Tab key="all" title="All" />
               <Tab key="undergraduate" title="Undergraduate" />
