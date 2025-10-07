@@ -239,8 +239,8 @@ export default function AboutPage() {
           <div className="text-center mb-12">
             <h2 className="text-3xl font-bold mb-3">What Our Students Say</h2>
             <p className="text-foreground-500 max-w-2xl mx-auto">
-              Hear from students who have successfully achieved their
-              international education goals with our guidance
+              Hear from our students who have successfully achieved their career
+              goals with our guidance.
             </p>
           </div>
 

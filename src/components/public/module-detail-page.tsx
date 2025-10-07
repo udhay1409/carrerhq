@@ -68,22 +68,6 @@ export default function ModuleDetailPage({
     });
   };
 
-  const handleShare = async () => {
-    if (navigator.share) {
-      try {
-        await navigator.share({
-          title: module?.title,
-          text: module?.shortDescription,
-          url: window.location.href,
-        });
-      } catch (error) {
-        console.log("Error sharing:", error);
-      }
-    } else {
-      navigator.clipboard.writeText(window.location.href);
-    }
-  };
-
   if (loading) {
     return (
       <div className="min-h-screen flex items-center justify-center bg-gradient-to-br from-slate-50 to-blue-50 dark:from-slate-900 dark:to-blue-900">
