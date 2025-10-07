@@ -446,9 +446,9 @@ function ModuleCardModern({ module, moduleType }: ModuleCardModernProps) {
 
   return (
     <Link href={`/${moduleType}/${module.id}`} className="group block h-full">
-      <div className="relative bg-white rounded-3xl overflow-hidden h-full flex flex-col shadow-lg shadow-gray-200/50 transition-all duration-500 hover:-translate-y-2 hover:shadow-2xl hover:shadow-blue-500/30">
+      <div className="relative bg-white rounded-2xl sm:rounded-3xl overflow-hidden h-full flex flex-col shadow-lg shadow-gray-200/50 transition-all duration-500 hover:-translate-y-2 hover:shadow-2xl hover:shadow-blue-500/30">
         {module.coverImage && (
-          <div className="relative w-full h-52 overflow-hidden">
+          <div className="relative w-full h-40 sm:h-48 md:h-52 overflow-hidden">
             <Image
               src={getImageUrl(module.coverImage) || "/placeholder.svg"}
               alt={module.title}
@@ -457,9 +457,9 @@ function ModuleCardModern({ module, moduleType }: ModuleCardModernProps) {
             />
             <div className="absolute inset-0 bg-gradient-to-br from-blue-600/20 via-transparent to-purple-600/20 opacity-0 group-hover:opacity-100 transition-opacity duration-500" />
 
-            <div className="absolute top-4 right-4">
-              <div className="bg-white/95 backdrop-blur-sm px-3 py-1.5 rounded-full shadow-lg">
-                <span className="text-xs font-bold text-blue-600">
+            <div className="absolute top-3 right-3 sm:top-4 sm:right-4">
+              <div className="bg-white/95 backdrop-blur-sm px-2.5 py-1 sm:px-3 sm:py-1.5 rounded-full shadow-lg">
+                <span className="text-[10px] sm:text-xs font-bold text-blue-600">
                   {module.category}
                 </span>
               </div>
@@ -467,28 +467,31 @@ function ModuleCardModern({ module, moduleType }: ModuleCardModernProps) {
           </div>
         )}
 
-        <div className="p-6 flex-1 flex flex-col">
-          <div className="flex items-start justify-between gap-3 mb-3">
-            <h3 className="text-xl font-bold text-gray-900 line-clamp-2 leading-tight group-hover:text-blue-600 transition-colors">
+        <div className="p-4 sm:p-6 flex-1 flex flex-col">
+          <div className="flex items-start justify-between gap-2 sm:gap-3 mb-2 sm:mb-3">
+            <h3 className="text-base sm:text-lg md:text-xl font-bold text-gray-900 line-clamp-2 leading-tight group-hover:text-blue-600 transition-colors">
               {module.title}
             </h3>
           </div>
 
-          <p className="text-sm text-gray-600 line-clamp-3 mb-4 leading-relaxed flex-1">
+          <p className="text-xs sm:text-sm text-gray-600 line-clamp-2 sm:line-clamp-3 mb-3 sm:mb-4 leading-relaxed flex-1">
             {module.shortDescription}
           </p>
 
           {module.highlights && module.highlights.length > 0 && (
-            <div className="space-y-2.5 mb-5">
+            <div className="space-y-2 sm:space-y-2.5 mb-4 sm:mb-5">
               {module.highlights.slice(0, 2).map((highlight, index) => (
                 <div
                   key={index}
-                  className="flex items-start gap-2.5 group/item"
+                  className="flex items-start gap-2 sm:gap-2.5 group/item"
                 >
-                  <div className="mt-0.5 flex-shrink-0 w-5 h-5 rounded-full bg-green-100 flex items-center justify-center">
-                    <CheckCircle2 size={14} className="text-green-600" />
+                  <div className="mt-0.5 flex-shrink-0 w-4 h-4 sm:w-5 sm:h-5 rounded-full bg-green-100 flex items-center justify-center">
+                    <CheckCircle2
+                      size={12}
+                      className="text-green-600 sm:w-3.5 sm:h-3.5"
+                    />
                   </div>
-                  <span className="text-sm text-gray-700 leading-relaxed">
+                  <span className="text-xs sm:text-sm text-gray-700 leading-relaxed line-clamp-2">
                     {highlight}
                   </span>
                 </div>
@@ -496,12 +499,15 @@ function ModuleCardModern({ module, moduleType }: ModuleCardModernProps) {
             </div>
           )}
 
-          <div className="flex items-center justify-between pt-4 border-t-2 border-gray-100 mt-auto">
+          <div className="flex flex-col sm:flex-row items-start sm:items-center justify-between gap-3 sm:gap-0 pt-3 sm:pt-4 border-t-2 border-gray-100 mt-auto">
             <div className="flex items-center gap-2">
-              <div className="w-8 h-8 rounded-full bg-blue-100 flex items-center justify-center">
-                <Calendar size={14} className="text-blue-600" />
+              <div className="w-7 h-7 sm:w-8 sm:h-8 rounded-full bg-blue-100 flex items-center justify-center">
+                <Calendar
+                  size={12}
+                  className="text-blue-600 sm:w-3.5 sm:h-3.5"
+                />
               </div>
-              <span className="text-xs font-medium text-gray-600">
+              <span className="text-[10px] sm:text-xs font-medium text-gray-600">
                 {new Date(module.createdAt || Date.now()).toLocaleDateString(
                   "en-US",
                   {
@@ -512,19 +518,19 @@ function ModuleCardModern({ module, moduleType }: ModuleCardModernProps) {
                 )}
               </span>
             </div>
-            <div className="flex items-center gap-2 text-blue-600 font-bold group-hover:gap-3 transition-all">
-              <span className="text-sm">Explore</span>
-              <div className="w-8 h-8 rounded-full bg-blue-600 flex items-center justify-center  transition-colors">
+            <div className="flex items-center gap-2 text-blue-600 font-bold group-hover:gap-3 transition-all w-full sm:w-auto justify-end">
+              <span className="text-xs sm:text-sm">Explore</span>
+              <div className="w-7 h-7 sm:w-8 sm:h-8 rounded-full bg-blue-600 flex items-center justify-center transition-colors">
                 <ArrowRight
-                  size={16}
-                  className="text-white transition-transform group-hover:translate-x-0.5"
+                  size={14}
+                  className="text-white transition-transform group-hover:translate-x-0.5 sm:w-4 sm:h-4"
                 />
               </div>
             </div>
           </div>
         </div>
 
-        <div className="absolute inset-0 rounded-3xl ring-2 ring-transparent group-hover:ring-blue-500/50 transition-all duration-500 pointer-events-none" />
+        <div className="absolute inset-0 rounded-2xl sm:rounded-3xl ring-2 ring-transparent group-hover:ring-blue-500/50 transition-all duration-500 pointer-events-none" />
       </div>
     </Link>
   );
