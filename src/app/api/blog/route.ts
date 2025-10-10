@@ -4,6 +4,33 @@ import BlogPost from "@/models/BlogPost";
 import type { CreateBlogPostData, BlogContent } from "@/types/blog";
 import { handleImageUpload } from "@/lib/image-upload-utils";
 
+// Allowed origins for production
+const allowedOrigins = [
+  "https://careerhq.in",
+  "https://www.careerhq.in",
+  "http://localhost:3000",
+];
+
+// Get CORS headers based on request origin
+function getCorsHeaders(request: NextRequest) {
+  const origin = request.headers.get("origin");
+  const isAllowedOrigin = origin && allowedOrigins.includes(origin);
+  const allowOrigin = isAllowedOrigin ? origin : allowedOrigins[0];
+
+  return {
+    "Access-Control-Allow-Origin": allowOrigin,
+    "Access-Control-Allow-Methods": "GET, POST, PUT, DELETE, OPTIONS",
+    "Access-Control-Allow-Headers":
+      "Content-Type, Authorization, X-Requested-With",
+    "Access-Control-Allow-Credentials": "true",
+  };
+}
+
+// Handle OPTIONS request for CORS preflight
+export async function OPTIONS(request: NextRequest) {
+  return NextResponse.json({}, { headers: getCorsHeaders(request) });
+}
+
 // Helper function to calculate read time
 function calculateReadTime(content: BlogContent[]): string {
   if (!content || !Array.isArray(content)) return "5 min read";
@@ -29,6 +56,8 @@ interface BlogQuery {
 
 // GET /api/blog - Get all blog posts with optional filtering
 export async function GET(request: NextRequest) {
+  const corsHeaders = getCorsHeaders(request);
+
   try {
     await connectToDatabase();
 
@@ -73,31 +102,36 @@ export async function GET(request: NextRequest) {
 
     const total = await BlogPost.countDocuments(query);
 
-    return NextResponse.json({
-      posts: posts.map((post) => ({
-        ...post,
-        id: String(post._id),
-        _id: undefined,
-        readTime: calculateReadTime(post.content),
-      })),
-      pagination: {
-        page,
-        limit,
-        total,
-        pages: Math.ceil(total / limit),
+    return NextResponse.json(
+      {
+        posts: posts.map((post) => ({
+          ...post,
+          id: String(post._id),
+          _id: undefined,
+          readTime: calculateReadTime(post.content),
+        })),
+        pagination: {
+          page,
+          limit,
+          total,
+          pages: Math.ceil(total / limit),
+        },
       },
-    });
+      { headers: corsHeaders }
+    );
   } catch (error) {
     console.error("Error fetching blog posts:", error);
     return NextResponse.json(
       { error: "Failed to fetch blog posts" },
-      { status: 500 }
+      { status: 500, headers: corsHeaders }
     );
   }
 }
 
 // POST /api/blog - Create a new blog post
 export async function POST(request: NextRequest) {
+  const corsHeaders = getCorsHeaders(request);
+
   try {
     await connectToDatabase();
 
@@ -170,12 +204,15 @@ export async function POST(request: NextRequest) {
     const blogPost = new BlogPost(postData);
     await blogPost.save();
 
-    return NextResponse.json(blogPost.toJSON(), { status: 201 });
+    return NextResponse.json(blogPost.toJSON(), {
+      status: 201,
+      headers: corsHeaders,
+    });
   } catch (error) {
     console.error("Error creating blog post:", error);
     return NextResponse.json(
       { error: "Failed to create blog post" },
-      { status: 500 }
+      { status: 500, headers: corsHeaders }
     );
   }
 }
