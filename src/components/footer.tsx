@@ -2,6 +2,7 @@
 
 import React from "react";
 import Link from "next/link";
+import Image from "next/image";
 import { Link as HeroLink } from "@heroui/link";
 import { Divider } from "@heroui/divider";
 import { Icon } from "@iconify/react";
@@ -22,7 +23,9 @@ export const Footer: React.FC = () => {
       title: "Study Abroad",
       links: countries.map((country) => ({
         name: country.name,
-        path: `/study-abroad/${generateCountrySlug(country.name) || country.id}`,
+        path: `/study-abroad/${
+          generateCountrySlug(country.name) || country.id
+        }`,
       })),
     },
     {
@@ -103,13 +106,14 @@ export const Footer: React.FC = () => {
       <div className="container mx-auto px-4">
         <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-5 gap-8">
           <div className="lg:col-span-2">
-            <Link href="/" className="flex items-center gap-2 mb-4 w-fit">
-              <div className="flex items-center justify-center w-10 h-10 rounded-lg bg-gradient-primary">
-                <span className="text-white font-bold text-lg">CH</span>
-              </div>
-              <p className="font-bold text-xl">
-                Career<span className="text-primary">HQ</span>
-              </p>
+            <Link href="/" className="mb-4 inline-block">
+              <Image
+                src="/images/career-hq-logo.png"
+                alt="CareerHQ Logo"
+                width={200}
+                height={67}
+                className="h-16 w-auto object-contain"
+              />
             </Link>
             <p className="text-foreground-500 mb-6 max-w-md">
               Empowering students and professionals to achieve their

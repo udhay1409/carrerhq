@@ -2,6 +2,7 @@
 
 import React from "react";
 import Link from "next/link";
+import Image from "next/image";
 import { usePathname } from "next/navigation";
 import { motion, AnimatePresence } from "framer-motion";
 import { cn } from "@/lib/utils";
@@ -90,12 +91,14 @@ export const MainNavbar: React.FC = () => {
         <div className="container mx-auto px-4">
           <div className="flex items-center justify-between py-3">
             <Link href="/" className="flex items-center gap-2">
-              <div className="flex items-center justify-center w-10 h-10 rounded-lg bg-gradient-primary">
-                <span className="text-white font-bold text-lg">CH</span>
-              </div>
-              <p className="font-bold text-lg">
-                Career<span className="text-blue-600">HQ</span>
-              </p>
+              <Image
+                src="/images/career-hq-logo.png"
+                alt="CareerHQ Logo"
+                width={180}
+                height={60}
+                className="h-14 w-auto object-contain"
+                priority
+              />
             </Link>
 
             <div className="flex items-center gap-6">
@@ -169,12 +172,14 @@ export const MainNavbar: React.FC = () => {
         <div className="container mx-auto px-4 py-3">
           <div className="flex items-center justify-between">
             <Link href="/" className="flex items-center gap-2">
-              <div className="flex items-center justify-center w-10 h-10 rounded-lg bg-gradient-primary">
-                <span className="text-white font-bold text-lg">CH</span>
-              </div>
-              <p className="font-bold text-lg">
-                Career<span className="text-blue-600">HQ</span>
-              </p>
+              <Image
+                src="/images/career-hq-logo.png"
+                alt="CareerHQ Logo"
+                width={160}
+                height={53}
+                className="h-12 w-auto object-contain"
+                priority
+              />
             </Link>
 
             <button
@@ -215,14 +220,13 @@ export const MainNavbar: React.FC = () => {
             >
               {/* Menu Header */}
               <div className="flex items-center justify-between p-4 border-b border-gray-200">
-                <div className="flex items-center gap-2">
-                  <div className="flex items-center justify-center w-10 h-10 rounded-lg bg-gradient-primary">
-                    <span className="text-white font-bold text-lg">CH</span>
-                  </div>
-                  <p className="font-bold text-lg">
-                    Career<span className="text-blue-600">HQ</span>
-                  </p>
-                </div>
+                <Image
+                  src="/images/career-hq-logo.png"
+                  alt="CareerHQ Logo"
+                  width={160}
+                  height={53}
+                  className="h-12 w-auto object-contain"
+                />
                 <button
                   onClick={() => setIsMobileMenuOpen(false)}
                   className="p-2 rounded-lg hover:bg-gray-100 active:bg-gray-200 transition-colors"
