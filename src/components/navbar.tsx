@@ -95,9 +95,9 @@ export const MainNavbar: React.FC = () => {
                 <Image
                   src="/images/career-hq-logo.png"
                   alt="CareerHQ Logo"
-                  width={360}
-                  height={120}
-                  className="h-32 w-auto object-contain"
+                  width={240}
+                  height={80}
+                  className="h-20 w-auto object-contain"
                   priority
                 />
               </Link>
@@ -180,9 +180,9 @@ export const MainNavbar: React.FC = () => {
               <Image
                 src="/images/career-hq-logo.png"
                 alt="CareerHQ Logo"
-                width={280}
-                height={93}
-                className="h-24 w-auto object-contain"
+                width={180}
+                height={60}
+                className="h-16 w-auto object-contain"
                 priority
               />
             </Link>
@@ -228,9 +228,9 @@ export const MainNavbar: React.FC = () => {
                 <Image
                   src="/images/career-hq-logo.png"
                   alt="CareerHQ Logo"
-                  width={280}
-                  height={93}
-                  className="h-24 w-auto object-contain"
+                  width={180}
+                  height={60}
+                  className="h-16 w-auto object-contain"
                 />
                 <button
                   onClick={() => setIsMobileMenuOpen(false)}

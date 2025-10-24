@@ -18,6 +18,14 @@ import { getImageUrl as getCloudinaryImageUrl } from "@/lib/cloudinary-utils";
 
 import type { EnquiryFormHandle } from "@/components/enquiry-form";
 
+interface Campus {
+  name: string;
+  location: string;
+  address?: string;
+  city: string;
+  facilities?: string[];
+}
+
 interface UniversityData {
   name: string;
   location: string;
@@ -31,14 +39,15 @@ interface UniversityData {
   internationalStudents: string;
   accommodation: string;
   facilities: string[];
+  campuses?: Campus[];
   website: string;
   country?: { name: string };
   countryName?: string;
 }
 
-interface Course {
-  serialNo?: string;
-  id?: string;
+interface LocalCourse {
+  serialNo?: string | number;
+  id?: string | number;
   university: string;
   programName?: string;
   campus?: string;
@@ -48,8 +57,8 @@ interface Course {
   entryRequirements?: string;
   ieltsScore?: number;
   ieltsNoBandLessThan?: number;
-  pteScore?: number;
-  pteNoBandLessThan?: number;
+  pteScore?: number | null;
+  pteNoBandLessThan?: number | null;
   yearlyTuitionFees?: string;
   countryId?: string;
   universityId?: string;
@@ -57,6 +66,7 @@ interface Course {
   intake?: string[];
   fee?: string;
   level?: string;
+  country?: string;
 }
 
 interface UniversityPageClientProps {
@@ -64,7 +74,7 @@ interface UniversityPageClientProps {
   countryId: string;
   universityId: string;
   countryName: string;
-  courses?: Course[];
+  courses?: LocalCourse[];
 }
 
 export const UniversityPageClient: React.FC<UniversityPageClientProps> = ({
@@ -75,6 +85,7 @@ export const UniversityPageClient: React.FC<UniversityPageClientProps> = ({
   courses: propsCourses = [],
 }) => {
   const [selected, setSelected] = React.useState("all");
+  const [selectedCampus, setSelectedCampus] = React.useState("all");
   const enquiryRef = React.useRef<EnquiryFormHandle | null>(null);
   const tabsRef = React.useRef<HTMLDivElement | null>(null);
 
@@ -100,37 +111,63 @@ export const UniversityPageClient: React.FC<UniversityPageClientProps> = ({
     loading,
   ]);
 
+  // Get unique campuses from courses
+  const availableCampuses = React.useMemo(() => {
+    const campusSet = new Set<string>();
+    courses.forEach((course) => {
+      if (course.campus) {
+        campusSet.add(course.campus);
+      }
+    });
+    return Array.from(campusSet).sort();
+  }, [courses]);
+
   const filteredCourses = React.useMemo(() => {
-    if (selected === "all") return courses;
+    let filtered: LocalCourse[] = courses;
 
-    // For New Zealand courses, all are Master's level
-    if (countryId === "new-zealand") {
-      if (selected === "postgraduate") return courses;
-      if (selected === "undergraduate" || selected === "doctorate") return [];
-      return courses;
+    // Filter by study level
+    if (selected !== "all") {
+      // For New Zealand courses, all are Master's level
+      if (countryId === "new-zealand") {
+        if (selected === "postgraduate") {
+          filtered = courses;
+        } else if (selected === "undergraduate" || selected === "doctorate") {
+          filtered = [];
+        }
+      }
+      // For German courses, all are Postgraduate level
+      else if (countryId === "germany") {
+        if (selected === "postgraduate") {
+          filtered = courses;
+        } else if (selected === "undergraduate" || selected === "doctorate") {
+          filtered = [];
+        }
+      }
+      // Standard filtering
+      else {
+        if (selected === "undergraduate") {
+          filtered = filtered.filter(
+            (course) => course.studyLevel === "Undergraduate"
+          );
+        } else if (selected === "postgraduate") {
+          filtered = filtered.filter(
+            (course) => course.studyLevel === "Postgraduate"
+          );
+        } else if (selected === "doctorate") {
+          filtered = filtered.filter(
+            (course) => course.studyLevel === "Doctorate"
+          );
+        }
+      }
     }
 
-    // For German courses, all are Postgraduate level
-    if (countryId === "germany") {
-      if (selected === "postgraduate") return courses;
-      if (selected === "undergraduate" || selected === "doctorate") return [];
-      return courses;
+    // Filter by campus
+    if (selectedCampus !== "all") {
+      filtered = filtered.filter((course) => course.campus === selectedCampus);
     }
 
-    if (selected === "undergraduate") {
-      return courses.filter((course) => course.studyLevel === "Undergraduate");
-    }
-
-    if (selected === "postgraduate") {
-      return courses.filter((course) => course.studyLevel === "Postgraduate");
-    }
-
-    if (selected === "doctorate") {
-      return courses.filter((course) => course.studyLevel === "Doctorate");
-    }
-
-    return courses;
-  }, [selected, courses, countryId]);
+    return filtered;
+  }, [selected, selectedCampus, courses, countryId]);
 
   // Ensure active tab is visible on mobile when selection changes
   React.useEffect(() => {
@@ -285,8 +322,100 @@ export const UniversityPageClient: React.FC<UniversityPageClientProps> = ({
         </div>
       </section>
 
+      {/* Campuses Section */}
+      {universityData.campuses && universityData.campuses.length > 0 && (
+        <section className="py-16 bg-white border-b border-default-200">
+          <div className="container mx-auto px-4">
+            <div className="text-center mb-12">
+              <h2 className="text-3xl font-bold mb-3">Campus Locations</h2>
+              <p className="text-foreground-500 max-w-2xl mx-auto">
+                {universityData.name} has {universityData.campuses.length}{" "}
+                campus{universityData.campuses.length > 1 ? "es" : ""} to serve
+                students
+              </p>
+            </div>
+
+            <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
+              {universityData.campuses.map((campus, index) => (
+                <motion.div
+                  key={index}
+                  initial={{ opacity: 0, y: 20 }}
+                  whileInView={{ opacity: 1, y: 0 }}
+                  transition={{ delay: index * 0.1, duration: 0.5 }}
+                  viewport={{ once: true }}
+                >
+                  <Card className="border border-default-200 h-full hover:shadow-lg transition-shadow">
+                    <CardBody className="p-6">
+                      <div className="flex items-start gap-3 mb-4">
+                        <div className="w-12 h-12 rounded-full bg-primary-100 flex items-center justify-center flex-shrink-0">
+                          <Icon
+                            icon="lucide:map-pin"
+                            className="text-primary text-xl"
+                          />
+                        </div>
+                        <div className="flex-1">
+                          <h3 className="text-xl font-semibold mb-1">
+                            {campus.name}
+                          </h3>
+                          <div className="flex items-center gap-1 text-sm text-foreground-500">
+                            <Icon icon="lucide:map" className="w-4 h-4" />
+                            <span>{campus.city}</span>
+                          </div>
+                        </div>
+                      </div>
+
+                      <div className="space-y-3">
+                        <div>
+                          <p className="text-sm font-medium text-foreground-700 mb-1">
+                            Location
+                          </p>
+                          <p className="text-sm text-foreground-500">
+                            {campus.location}
+                          </p>
+                        </div>
+
+                        {campus.address && (
+                          <div>
+                            <p className="text-sm font-medium text-foreground-700 mb-1">
+                              Address
+                            </p>
+                            <p className="text-sm text-foreground-500">
+                              {campus.address}
+                            </p>
+                          </div>
+                        )}
+
+                        {campus.facilities && campus.facilities.length > 0 && (
+                          <div>
+                            <p className="text-sm font-medium text-foreground-700 mb-2">
+                              Facilities
+                            </p>
+                            <div className="flex flex-wrap gap-1">
+                              {campus.facilities.map((facility, fIndex) => (
+                                <Chip
+                                  key={fIndex}
+                                  size="sm"
+                                  variant="flat"
+                                  color="primary"
+                                >
+                                  {facility}
+                                </Chip>
+                              ))}
+                            </div>
+                          </div>
+                        )}
+                      </div>
+                    </CardBody>
+                  </Card>
+                </motion.div>
+              ))}
+            </div>
+          </div>
+        </section>
+      )}
+
       {/* University Information Section */}
-      <section className="py-16 bg-white">
+      <section className="py-16 bg-default-50">
         <div className="container mx-auto px-4">
           <div className="text-center mb-12">
             <h2 className="text-3xl font-bold mb-3">University Information</h2>
@@ -363,9 +492,9 @@ export const UniversityPageClient: React.FC<UniversityPageClientProps> = ({
       </section>
 
       {/* Courses Section */}
-      <section id="courses" className="py-16 bg-default-50">
+      <section id="courses" className="py-16 bg-white">
         <div className="container mx-auto px-4">
-          <div className="flex flex-col md:flex-row justify-between items-start md:items-center mb-10 gap-4">
+          <div className="flex flex-col md:flex-row justify-between items-start md:items-center mb-6 gap-4">
             <div>
               <h2 className="text-3xl font-bold mb-2">
                 Courses at {universityData.name}
@@ -415,6 +544,53 @@ export const UniversityPageClient: React.FC<UniversityPageClientProps> = ({
             </div>
           </div>
 
+          {/* Campus Filter */}
+          {availableCampuses.length > 1 && (
+            <div className="mb-6">
+              <div className="flex items-center gap-3 flex-wrap">
+                <div className="flex items-center gap-2">
+                  <Icon
+                    icon="lucide:map-pin"
+                    className="text-foreground-500 w-4 h-4"
+                  />
+                  <span className="text-sm font-medium text-foreground-700">
+                    Filter by Campus:
+                  </span>
+                </div>
+                <div className="flex flex-wrap gap-2">
+                  <Chip
+                    size="sm"
+                    variant={selectedCampus === "all" ? "solid" : "flat"}
+                    color={selectedCampus === "all" ? "primary" : "default"}
+                    className="cursor-pointer"
+                    onClick={() => setSelectedCampus("all")}
+                  >
+                    All Campuses ({courses.length})
+                  </Chip>
+                  {availableCampuses.map((campus) => {
+                    const campusCount = courses.filter(
+                      (c) => c.campus === campus
+                    ).length;
+                    return (
+                      <Chip
+                        key={campus}
+                        size="sm"
+                        variant={selectedCampus === campus ? "solid" : "flat"}
+                        color={
+                          selectedCampus === campus ? "primary" : "default"
+                        }
+                        className="cursor-pointer"
+                        onClick={() => setSelectedCampus(campus)}
+                      >
+                        {campus} ({campusCount})
+                      </Chip>
+                    );
+                  })}
+                </div>
+              </div>
+            </div>
+          )}
+
           <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-6">
             {filteredCourses
               .filter((course) => {
@@ -428,7 +604,7 @@ export const UniversityPageClient: React.FC<UniversityPageClientProps> = ({
                   universityName && universityName.trim().length > 0;
                 const hasValidProgram =
                   course.programName ||
-                  (course as Course & { name?: string }).name;
+                  (course as LocalCourse & { name?: string }).name;
 
                 if (!hasValidUniversity || !hasValidProgram) {
                   console.warn(`Filtering out invalid course:`, {
@@ -437,7 +613,7 @@ export const UniversityPageClient: React.FC<UniversityPageClientProps> = ({
                     universityName: universityName,
                     programName:
                       course.programName ||
-                      (course as Course & { name?: string }).name,
+                      (course as LocalCourse & { name?: string }).name,
                   });
                   return false;
                 }
@@ -459,15 +635,15 @@ export const UniversityPageClient: React.FC<UniversityPageClientProps> = ({
                           "University Name Not Available",
                     programName:
                       course.programName ||
-                      (course as Course & { name?: string }).name ||
+                      (course as LocalCourse & { name?: string }).name ||
                       "Program Name Not Available",
                     campus: course.campus || "Main Campus",
                     duration: course.duration || "Duration Not Specified",
                     openIntakes:
                       course.openIntakes ||
-                      (course as Course & { intake?: string[] }).intake?.join(
-                        ", "
-                      ) ||
+                      (
+                        course as LocalCourse & { intake?: string[] }
+                      ).intake?.join(", ") ||
                       "Contact University",
                     intakeYear: course.intakeYear || "2025",
                     entryRequirements:
@@ -479,7 +655,7 @@ export const UniversityPageClient: React.FC<UniversityPageClientProps> = ({
                     pteNoBandLessThan: course.pteNoBandLessThan || 0,
                     yearlyTuitionFees:
                       course.yearlyTuitionFees ||
-                      (course as Course & { fee?: string }).fee ||
+                      (course as LocalCourse & { fee?: string }).fee ||
                       "Contact University",
                     country: countryId,
                     studyLevel: course.studyLevel || "",
@@ -504,9 +680,29 @@ export const UniversityPageClient: React.FC<UniversityPageClientProps> = ({
 
           {filteredCourses.length === 0 && (
             <div className="text-center py-12">
-              <p className="text-foreground-500">
-                No courses found matching your criteria.
+              <Icon
+                icon="lucide:search-x"
+                className="w-16 h-16 text-foreground-300 mx-auto mb-4"
+              />
+              <p className="text-foreground-500 text-lg font-medium mb-2">
+                No courses found
               </p>
+              <p className="text-foreground-400 text-sm mb-4">
+                Try adjusting your filters to see more results
+              </p>
+              {(selected !== "all" || selectedCampus !== "all") && (
+                <Button
+                  size="sm"
+                  variant="flat"
+                  color="primary"
+                  onPress={() => {
+                    setSelected("all");
+                    setSelectedCampus("all");
+                  }}
+                >
+                  Clear All Filters
+                </Button>
+              )}
             </div>
           )}
         </div>

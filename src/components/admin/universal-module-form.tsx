@@ -1,6 +1,7 @@
 "use client";
 
 import { useState, useEffect } from "react";
+import Image from "next/image";
 import { Button } from "@heroui/button";
 import { Input, Textarea } from "@heroui/input";
 import { Card, CardBody, CardHeader } from "@heroui/card";
@@ -479,6 +480,7 @@ export default function UniversalModuleForm({
                   {galleryImageFiles.map((file, index) => (
                     <div key={index} className="relative group">
                       <div className="relative w-full h-32">
+                        {/* eslint-disable-next-line @next/next/no-img-element */}
                         <img
                           src={URL.createObjectURL(file)}
                           alt={file.name}
@@ -517,10 +519,12 @@ export default function UniversalModuleForm({
                   {formData.galleryImages.map((imageId, index) => (
                     <div key={index} className="relative group">
                       <div className="relative w-full h-32">
-                        <img
+                        <Image
                           src={`https://res.cloudinary.com/${process.env.NEXT_PUBLIC_CLOUDINARY_CLOUD_NAME}/image/upload/w_300,h_300,c_fill/${imageId}`}
                           alt={`Gallery ${index + 1}`}
-                          className="w-full h-full object-cover rounded-lg"
+                          fill
+                          className="object-cover rounded-lg"
+                          sizes="300px"
                         />
                       </div>
                       <Button

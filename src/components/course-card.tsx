@@ -152,9 +152,18 @@ function SafeCourseCard({
             >
               {safeData.university}
             </p>
-            <p className="text-foreground-400 text-xs mb-4">
-              📍 {safeData.campus}
-            </p>
+            <div className="flex items-center gap-1.5 mb-4">
+              <Icon
+                icon="lucide:map-pin"
+                className="text-primary flex-shrink-0 w-3.5 h-3.5"
+              />
+              <p
+                className="text-foreground-500 text-xs line-clamp-1"
+                title={safeData.campus}
+              >
+                {safeData.campus}
+              </p>
+            </div>
 
             <div className="grid grid-cols-2 gap-3 mb-4">
               <div className="flex items-center gap-2">

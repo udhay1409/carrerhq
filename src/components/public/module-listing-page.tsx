@@ -44,24 +44,32 @@ interface ModuleListingModernProps {
   title: string;
   description: string;
   heroImage?: string;
+  initialModules?: UniversalModule[];
+  initialCategories?: ModuleCategory[];
 }
 
 export default function ModuleListingModern({
   moduleType,
   title,
   description,
+  initialModules = [],
+  initialCategories = [],
 }: ModuleListingModernProps) {
-  const [modules, setModules] = useState<UniversalModule[]>([]);
-  const [categories, setCategories] = useState<ModuleCategory[]>([]);
-  const [loading, setLoading] = useState(true);
+  const [modules, setModules] = useState<UniversalModule[]>(initialModules);
+  const [categories, setCategories] =
+    useState<ModuleCategory[]>(initialCategories);
+  const [loading, setLoading] = useState(false);
   const [searchQuery, setSearchQuery] = useState("");
   const [selectedCategories, setSelectedCategories] = useState<Set<string>>(
     new Set()
   );
   const [showFilters, setShowFilters] = useState(false);
 
+  // Only fetch data if initial data wasn't provided
   useEffect(() => {
-    fetchData();
+    if (initialModules.length === 0 && initialCategories.length === 0) {
+      fetchData();
+    }
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [moduleType]);
 

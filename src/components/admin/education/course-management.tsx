@@ -60,6 +60,7 @@ export function CourseManagement() {
   const [searchTerm, setSearchTerm] = useState("");
   const [selectedCountry, setSelectedCountry] = useState("");
   const [selectedUniversity, setSelectedUniversity] = useState("");
+  const [selectedCampus, setSelectedCampus] = useState("");
   const [currentPage, setCurrentPage] = useState(1);
 
   const [formData, setFormData] = useState<CreateCourseData>({
@@ -100,6 +101,10 @@ export function CourseManagement() {
     onClose: onDeleteClose,
   } = useDisclosure();
 
+  // Get available campuses for the selected university
+  const availableCampuses =
+    universities.find((uni) => uni.id === selectedUniversity)?.campuses || [];
+
   // Move fetchCourses definition before useEffect and wrap it in useCallback
   const fetchCourses = useCallback(async () => {
     try {
@@ -116,11 +121,25 @@ export function CourseManagement() {
       params.append("includeUnpublished", "true");
       const response = await fetch(`/api/courses?${params}`);
       const data = await response.json();
+
+      // Apply campus filter on client side if selected
+      if (selectedCampus && data.courses) {
+        data.courses = data.courses.filter(
+          (course: Course) => course.campus === selectedCampus
+        );
+      }
+
       setCoursesData(data);
     } catch (error) {
       console.error("Error fetching courses:", error);
     }
-  }, [currentPage, searchTerm, selectedCountry, selectedUniversity]);
+  }, [
+    currentPage,
+    searchTerm,
+    selectedCountry,
+    selectedUniversity,
+    selectedCampus,
+  ]);
 
   useEffect(() => {
     fetchData();
@@ -399,7 +418,7 @@ export function CourseManagement() {
       </div>
 
       {/* Filters */}
-      <div className="grid grid-cols-1 md:grid-cols-4 gap-4">
+      <div className="grid grid-cols-1 md:grid-cols-5 gap-4">
         <Input
           placeholder="Search courses..."
           startContent={<Search size={20} />}
@@ -416,6 +435,7 @@ export function CourseManagement() {
             const countryId = selection[0] as string;
             setSelectedCountry(countryId || "");
             setSelectedUniversity(""); // Reset university filter
+            setSelectedCampus(""); // Reset campus filter
             setCurrentPage(1); // Reset to first page when filter changes
           }}
         >
@@ -432,6 +452,7 @@ export function CourseManagement() {
             const selection = Array.from(keys);
             const universityId = selection[0] as string;
             setSelectedUniversity(universityId || "");
+            setSelectedCampus(""); // Reset campus filter
             setCurrentPage(1); // Reset to first page when filter changes
           }}
           isDisabled={!selectedCountry}
@@ -440,12 +461,38 @@ export function CourseManagement() {
             <SelectItem key={university.id}>{university.name}</SelectItem>
           ))}
         </Select>
+        <Select
+          placeholder="Filter by campus"
+          selectedKeys={selectedCampus ? new Set([selectedCampus]) : new Set()}
+          onSelectionChange={(keys) => {
+            const selection = Array.from(keys);
+            const campus = selection[0] as string;
+            setSelectedCampus(campus || "");
+            setCurrentPage(1); // Reset to first page when filter changes
+          }}
+          isDisabled={!selectedUniversity || availableCampuses.length === 0}
+          description={
+            selectedUniversity && availableCampuses.length === 0
+              ? "No campuses defined"
+              : undefined
+          }
+        >
+          {availableCampuses.map((campus) => (
+            <SelectItem key={campus.name} textValue={campus.name}>
+              <div className="flex flex-col">
+                <span className="font-medium">{campus.name}</span>
+                <span className="text-xs text-gray-500">{campus.city}</span>
+              </div>
+            </SelectItem>
+          ))}
+        </Select>
         <Button
           variant="flat"
           onPress={() => {
             setSearchTerm("");
             setSelectedCountry("");
             setSelectedUniversity("");
+            setSelectedCampus("");
             setCurrentPage(1);
           }}
         >
@@ -682,15 +729,66 @@ export function CourseManagement() {
                     <SelectItem key="Certificate">Certificate</SelectItem>
                     <SelectItem key="Diploma">Diploma</SelectItem>
                   </Select>
-                  <Input
-                    label="Campus"
-                    placeholder="Main Campus"
-                    value={formData.campus}
-                    onChange={(e) =>
-                      setFormData({ ...formData, campus: e.target.value })
-                    }
-                    isRequired
-                  />
+                  {(() => {
+                    const selectedUniversity = universities.find(
+                      (uni) => uni.id === formData.universityId
+                    );
+                    const hasCampuses =
+                      selectedUniversity?.campuses &&
+                      selectedUniversity.campuses.length > 0;
+
+                    return hasCampuses ? (
+                      <Select
+                        label="Campus"
+                        placeholder="Select campus"
+                        selectedKeys={
+                          formData.campus
+                            ? new Set([formData.campus])
+                            : new Set()
+                        }
+                        onSelectionChange={(keys) => {
+                          const selection = Array.from(keys);
+                          const campus = selection[0] as string;
+                          setFormData({ ...formData, campus: campus || "" });
+                        }}
+                        isRequired
+                        selectionMode="single"
+                        disallowEmptySelection={false}
+                        description={
+                          selectedUniversity.campuses &&
+                          selectedUniversity.campuses.length > 0
+                            ? `${selectedUniversity.campuses.length} campus(es) available`
+                            : undefined
+                        }
+                      >
+                        {(selectedUniversity.campuses || []).map((campus) => (
+                          <SelectItem key={campus.name} textValue={campus.name}>
+                            <div className="flex flex-col">
+                              <span className="font-medium">{campus.name}</span>
+                              <span className="text-xs text-gray-500">
+                                {campus.location}, {campus.city}
+                              </span>
+                            </div>
+                          </SelectItem>
+                        ))}
+                      </Select>
+                    ) : (
+                      <Input
+                        label="Campus"
+                        placeholder="Main Campus"
+                        value={formData.campus}
+                        onChange={(e) =>
+                          setFormData({ ...formData, campus: e.target.value })
+                        }
+                        isRequired
+                        description={
+                          formData.universityId
+                            ? "No campuses defined for this university. Enter manually."
+                            : "Select a university first"
+                        }
+                      />
+                    );
+                  })()}
                   <Input
                     label="Duration"
                     placeholder="2 years"

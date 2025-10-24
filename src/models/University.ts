@@ -82,6 +82,18 @@ const UniversitySchema = new Schema<IUniversity>(
       type: [String],
       default: [],
     },
+    campuses: {
+      type: [
+        {
+          name: { type: String, required: true, trim: true },
+          location: { type: String, required: true, trim: true },
+          address: { type: String, trim: true },
+          city: { type: String, required: true, trim: true },
+          facilities: { type: [String], default: [] },
+        },
+      ],
+      default: [],
+    },
     published: {
       type: Boolean,
       default: true, // Default to published for existing universities

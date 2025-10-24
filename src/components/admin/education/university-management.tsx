@@ -38,6 +38,7 @@ import type {
   University,
   Country,
   CreateUniversityData,
+  Campus,
 } from "@/types/education";
 import ImageUpload from "@/components/admin/image-upload";
 import { getImageUrl } from "@/lib/cloudinary-utils";
@@ -63,11 +64,25 @@ export function UniversityManagement() {
     internationalStudents: "",
     accommodation: "",
     facilities: [],
+    campuses: [],
     published: true,
   });
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [hasUnsavedChanges, setHasUnsavedChanges] = useState(false);
   const [imageFile, setImageFile] = useState<File | null>(null);
+
+  // Campus management state
+  const [campusFormData, setCampusFormData] = useState<Campus>({
+    name: "",
+    location: "",
+    address: "",
+    city: "",
+    facilities: [],
+  });
+  const [editingCampusIndex, setEditingCampusIndex] = useState<number | null>(
+    null
+  );
+  const [showCampusForm, setShowCampusForm] = useState(false);
 
   const { isOpen, onOpen, onClose } = useDisclosure();
   const {
@@ -101,6 +116,8 @@ export function UniversityManagement() {
         formData.accommodation !== (selectedUniversity.accommodation || "") ||
         JSON.stringify(formData.facilities) !==
           JSON.stringify(selectedUniversity.facilities || []) ||
+        JSON.stringify(formData.campuses) !==
+          JSON.stringify(selectedUniversity.campuses || []) ||
         formData.published !== (selectedUniversity.published ?? true);
 
       setHasUnsavedChanges(hasChanges);
@@ -317,8 +334,11 @@ export function UniversityManagement() {
       internationalStudents: university.internationalStudents || "",
       accommodation: university.accommodation || "",
       facilities: university.facilities || [],
+      campuses: university.campuses || [],
       published: university.published ?? true,
     });
+    setShowCampusForm(false);
+    setEditingCampusIndex(null);
     onOpen();
   };
 
@@ -326,6 +346,15 @@ export function UniversityManagement() {
     setSelectedUniversity(null);
     setHasUnsavedChanges(false);
     setImageFile(null);
+    setShowCampusForm(false);
+    setEditingCampusIndex(null);
+    setCampusFormData({
+      name: "",
+      location: "",
+      address: "",
+      city: "",
+      facilities: [],
+    });
     setFormData({
       name: "",
       countryId: "",
@@ -341,6 +370,7 @@ export function UniversityManagement() {
       internationalStudents: "",
       accommodation: "",
       facilities: [],
+      campuses: [],
     });
     onClose();
   };
@@ -351,6 +381,88 @@ export function UniversityManagement() {
       .map((f) => f.trim())
       .filter(Boolean);
     setFormData({ ...formData, facilities });
+  };
+
+  // Campus management functions
+  const handleAddCampus = () => {
+    if (
+      !campusFormData.name ||
+      !campusFormData.location ||
+      !campusFormData.city
+    ) {
+      addToast({
+        title: "Please fill in all required campus fields",
+        color: "warning",
+      });
+      return;
+    }
+
+    const newCampuses = [...(formData.campuses || [])];
+
+    if (editingCampusIndex !== null) {
+      // Update existing campus
+      newCampuses[editingCampusIndex] = campusFormData;
+      addToast({
+        title: "Campus updated successfully!",
+        color: "success",
+      });
+    } else {
+      // Add new campus
+      newCampuses.push(campusFormData);
+      addToast({
+        title: "Campus added successfully!",
+        color: "success",
+      });
+    }
+
+    setFormData({ ...formData, campuses: newCampuses });
+    setCampusFormData({
+      name: "",
+      location: "",
+      address: "",
+      city: "",
+      facilities: [],
+    });
+    setEditingCampusIndex(null);
+    setShowCampusForm(false);
+  };
+
+  const handleEditCampus = (index: number) => {
+    const campus = formData.campuses?.[index];
+    if (campus) {
+      setCampusFormData(campus);
+      setEditingCampusIndex(index);
+      setShowCampusForm(true);
+    }
+  };
+
+  const handleDeleteCampus = (index: number) => {
+    const newCampuses = formData.campuses?.filter((_, i) => i !== index) || [];
+    setFormData({ ...formData, campuses: newCampuses });
+    addToast({
+      title: "Campus removed successfully!",
+      color: "success",
+    });
+  };
+
+  const handleCancelCampusEdit = () => {
+    setCampusFormData({
+      name: "",
+      location: "",
+      address: "",
+      city: "",
+      facilities: [],
+    });
+    setEditingCampusIndex(null);
+    setShowCampusForm(false);
+  };
+
+  const handleCampusFacilitiesChange = (value: string) => {
+    const facilities = value
+      .split(",")
+      .map((f) => f.trim())
+      .filter(Boolean);
+    setCampusFormData({ ...campusFormData, facilities });
   };
 
   if (loading) {
@@ -678,8 +790,192 @@ export function UniversityManagement() {
               onChange={(e) => handleFacilitiesChange(e.target.value)}
             />
 
+            {/* Campus Management Section */}
+            <div className="md:col-span-2 mt-6">
+              <div className="border-t pt-6">
+                <div className="flex items-center justify-between mb-4">
+                  <h3 className="text-lg font-semibold">Campuses</h3>
+                  <Button
+                    size="sm"
+                    color="primary"
+                    variant="flat"
+                    startContent={<Plus size={16} />}
+                    onPress={() => setShowCampusForm(!showCampusForm)}
+                  >
+                    {showCampusForm ? "Cancel" : "Add Campus"}
+                  </Button>
+                </div>
+
+                {/* Campus Form */}
+                {showCampusForm && (
+                  <div className="bg-gray-50 p-4 rounded-lg mb-4 space-y-3">
+                    <h4 className="text-sm font-semibold text-gray-700">
+                      {editingCampusIndex !== null
+                        ? "Edit Campus"
+                        : "New Campus"}
+                    </h4>
+                    <div className="grid grid-cols-1 md:grid-cols-2 gap-3">
+                      <Input
+                        size="sm"
+                        label="Campus Name"
+                        placeholder="Main Campus, Downtown Campus, etc."
+                        value={campusFormData.name}
+                        onChange={(e) =>
+                          setCampusFormData({
+                            ...campusFormData,
+                            name: e.target.value,
+                          })
+                        }
+                        isRequired
+                      />
+                      <Input
+                        size="sm"
+                        label="Location"
+                        placeholder="Area/District"
+                        value={campusFormData.location}
+                        onChange={(e) =>
+                          setCampusFormData({
+                            ...campusFormData,
+                            location: e.target.value,
+                          })
+                        }
+                        isRequired
+                      />
+                      <Input
+                        size="sm"
+                        label="City"
+                        placeholder="City name"
+                        value={campusFormData.city}
+                        onChange={(e) =>
+                          setCampusFormData({
+                            ...campusFormData,
+                            city: e.target.value,
+                          })
+                        }
+                        isRequired
+                      />
+                      <Input
+                        size="sm"
+                        label="Address"
+                        placeholder="Street address"
+                        value={campusFormData.address || ""}
+                        onChange={(e) =>
+                          setCampusFormData({
+                            ...campusFormData,
+                            address: e.target.value,
+                          })
+                        }
+                      />
+                      <div className="md:col-span-2">
+                        <Input
+                          size="sm"
+                          label="Campus Facilities"
+                          placeholder="Library, Lab, Sports Complex (comma-separated)"
+                          value={campusFormData.facilities?.join(", ") || ""}
+                          onChange={(e) =>
+                            handleCampusFacilitiesChange(e.target.value)
+                          }
+                        />
+                      </div>
+                    </div>
+                    <div className="flex gap-2 justify-end">
+                      <Button
+                        size="sm"
+                        variant="light"
+                        onPress={handleCancelCampusEdit}
+                      >
+                        Cancel
+                      </Button>
+                      <Button
+                        size="sm"
+                        color="primary"
+                        onPress={handleAddCampus}
+                        isDisabled={
+                          !campusFormData.name ||
+                          !campusFormData.location ||
+                          !campusFormData.city
+                        }
+                      >
+                        {editingCampusIndex !== null ? "Update" : "Add"} Campus
+                      </Button>
+                    </div>
+                  </div>
+                )}
+
+                {/* Campus List */}
+                {formData.campuses && formData.campuses.length > 0 ? (
+                  <div className="space-y-2">
+                    {formData.campuses.map((campus, index) => (
+                      <div
+                        key={index}
+                        className="flex items-start justify-between p-3 bg-white border border-gray-200 rounded-lg hover:border-blue-300 transition-colors"
+                      >
+                        <div className="flex-1">
+                          <div className="flex items-center gap-2">
+                            <h4 className="font-semibold text-sm">
+                              {campus.name}
+                            </h4>
+                            <Chip size="sm" variant="flat" color="primary">
+                              {campus.city}
+                            </Chip>
+                          </div>
+                          <p className="text-xs text-gray-600 mt-1">
+                            {campus.location}
+                            {campus.address && ` • ${campus.address}`}
+                          </p>
+                          {campus.facilities &&
+                            campus.facilities.length > 0 && (
+                              <div className="flex flex-wrap gap-1 mt-2">
+                                {campus.facilities.map((facility, fIndex) => (
+                                  <Chip
+                                    key={fIndex}
+                                    size="sm"
+                                    variant="flat"
+                                    color="default"
+                                  >
+                                    {facility}
+                                  </Chip>
+                                ))}
+                              </div>
+                            )}
+                        </div>
+                        <div className="flex items-center gap-1 ml-3">
+                          <Tooltip content="Edit Campus">
+                            <Button
+                              isIconOnly
+                              size="sm"
+                              variant="light"
+                              onPress={() => handleEditCampus(index)}
+                            >
+                              <Edit size={14} />
+                            </Button>
+                          </Tooltip>
+                          <Tooltip content="Delete Campus" color="danger">
+                            <Button
+                              isIconOnly
+                              size="sm"
+                              variant="light"
+                              color="danger"
+                              onPress={() => handleDeleteCampus(index)}
+                            >
+                              <Trash2 size={14} />
+                            </Button>
+                          </Tooltip>
+                        </div>
+                      </div>
+                    ))}
+                  </div>
+                ) : (
+                  <p className="text-sm text-gray-500 text-center py-4">
+                    No campuses added yet. Click &quot;Add Campus&quot; to add
+                    one.
+                  </p>
+                )}
+              </div>
+            </div>
+
             {/* Publish Status */}
-            <div className="flex items-center gap-2 mt-4">
+            <div className="flex items-center gap-2 mt-4 md:col-span-2">
               <input
                 type="checkbox"
                 id="published"

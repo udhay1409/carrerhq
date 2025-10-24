@@ -1,6 +1,7 @@
 "use client";
 
 import { useState } from "react";
+import Image from "next/image";
 import { Button } from "@heroui/button";
 import { Chip } from "@heroui/chip";
 import { Input } from "@heroui/input";
@@ -137,10 +138,12 @@ export default function ModuleList({
                     {/* Image Header */}
                     <div className="relative h-48 overflow-hidden rounded-t-lg">
                       {module.coverImage ? (
-                        <img
+                        <Image
                           src={`https://res.cloudinary.com/${process.env.NEXT_PUBLIC_CLOUDINARY_CLOUD_NAME}/image/upload/w_400,h_300,c_fill/${module.coverImage}`}
                           alt={module.title}
-                          className="w-full h-full object-cover group-hover:scale-105 transition-transform duration-300"
+                          fill
+                          className="object-cover group-hover:scale-105 transition-transform duration-300"
+                          sizes="400px"
                         />
                       ) : (
                         <div className="w-full h-full bg-gradient-to-br from-primary-100 to-primary-200 flex items-center justify-center">

@@ -26,6 +26,15 @@ export interface CountryWithCounts extends Country {
   courses: number;
 }
 
+export interface Campus {
+  id?: string;
+  name: string;
+  location: string;
+  address?: string;
+  city: string;
+  facilities?: string[];
+}
+
 export interface University {
   id: string;
   name: string;
@@ -44,6 +53,7 @@ export interface University {
   accommodation?: string;
   facilities?: string[];
   tags?: string[];
+  campuses?: Campus[]; // Multiple campuses
   courses?: number; // For display purposes
   published?: boolean;
   createdAt?: Date;
@@ -130,6 +140,7 @@ export interface CreateUniversityData {
   internationalStudents?: string;
   accommodation?: string;
   facilities?: string[];
+  campuses?: Campus[]; // Multiple campuses
   published?: boolean;
 }
 
