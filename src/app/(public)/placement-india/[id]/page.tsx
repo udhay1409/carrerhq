@@ -1,5 +1,7 @@
 import { Metadata } from "next";
 import ModuleDetailPage from "@/components/public/module-detail-page";
+import { notFound } from "next/navigation";
+import { getModule } from "@/lib/get-module";
 
 export async function generateMetadata({
   params,
@@ -7,24 +9,13 @@ export async function generateMetadata({
   params: Promise<{ id: string }>;
 }): Promise<Metadata> {
   const { id } = await params;
+  const moduleData = await getModule(id);
 
-  try {
-    const response = await fetch(
-      `${
-        process.env.NEXT_PUBLIC_API_URL || "http://localhost:3000"
-      }/api/modules/${id}`,
-      { cache: "no-store" }
-    );
-
-    if (response.ok) {
-      const moduleData = await response.json();
-      return {
-        title: `${moduleData.title} | Placement India | CareerHQ`,
-        description: moduleData.shortDescription,
-      };
-    }
-  } catch (error) {
-    console.error("Error fetching metadata:", error);
+  if (moduleData) {
+    return {
+      title: `${moduleData.title} | Placement India | CareerHQ`,
+      description: moduleData.shortDescription,
+    };
   }
 
   return {
@@ -39,6 +30,11 @@ export default async function PlacementIndiaDetailPage({
   params: Promise<{ id: string }>;
 }) {
   const { id } = await params;
+  const module = await getModule(id);
 
-  return <ModuleDetailPage moduleId={id} moduleType="placement-india" />;
+  if (!module) {
+    notFound();
+  }
+
+  return <ModuleDetailPage module={module} moduleType="placement-india" />;
 }

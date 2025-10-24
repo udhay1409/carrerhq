@@ -1,10 +1,9 @@
 "use client";
 
-import { useEffect, useState, useRef } from "react";
+import { useState, useRef } from "react";
 import { Card, CardBody } from "@heroui/card";
 import { Chip } from "@heroui/chip";
 import { Button } from "@heroui/button";
-import { Spinner } from "@heroui/spinner";
 import { Icon } from "@iconify/react";
 
 import {
@@ -39,39 +38,16 @@ const MODULE_TYPE_TO_ROUTE: Record<ModuleType, string> = {
 };
 
 interface ModuleDetailPageProps {
-  moduleId: string;
+  module: UniversalModule;
   moduleType: ModuleType;
 }
 
 export default function ModuleDetailPage({
-  moduleId,
+  module,
   moduleType,
 }: ModuleDetailPageProps) {
-  const [module, setModule] = useState<UniversalModule | null>(null);
-  const [loading, setLoading] = useState(true);
-  const [selectedImage, setSelectedImage] = useState<string>("");
+  const [selectedImage, setSelectedImage] = useState<string>(module.coverImage);
   const enquiryRef = useRef<EnquiryFormHandle | null>(null);
-
-  const fetchModule = async () => {
-    setLoading(true);
-    try {
-      const response = await fetch(`/api/modules/${moduleId}`);
-      if (response.ok) {
-        const data = await response.json();
-        setModule(data);
-        setSelectedImage(data.coverImage);
-      }
-    } catch (error) {
-      console.error("Error fetching module:", error);
-    } finally {
-      setLoading(false);
-    }
-  };
-
-  useEffect(() => {
-    fetchModule();
-    // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [moduleId]);
 
   const getImageUrl = (imageId: string, width = 1200, height = 800) => {
     return `https://res.cloudinary.com/${process.env.NEXT_PUBLIC_CLOUDINARY_CLOUD_NAME}/image/upload/w_${width},h_${height},c_fill/${imageId}`;
@@ -83,40 +59,6 @@ export default function ModuleDetailPage({
       block: "center",
     });
   };
-
-  if (loading) {
-    return (
-      <div className="min-h-screen flex items-center justify-center bg-gradient-to-br from-slate-50 to-blue-50 dark:from-slate-900 dark:to-blue-900">
-        <div className="text-center space-y-4">
-          <Spinner size="lg" color="primary" />
-          <p className="text-default-500">Loading content...</p>
-        </div>
-      </div>
-    );
-  }
-
-  if (!module) {
-    return (
-      <div className="min-h-screen flex items-center justify-center bg-gradient-to-br from-slate-50 to-blue-50 dark:from-slate-900 dark:to-blue-900">
-        <Card className="max-w-md">
-          <CardBody className="text-center py-12">
-            <div className="w-16 h-16 bg-danger-100 rounded-full flex items-center justify-center mx-auto mb-4">
-              <ExternalLink size={24} className="text-danger-500" />
-            </div>
-            <h2 className="text-xl font-bold mb-2">Content not found</h2>
-            <p className="text-default-500 mb-6">
-              The requested content could not be found or may have been removed.
-            </p>
-            <Link href={`/${MODULE_TYPE_TO_ROUTE[moduleType]}`}>
-              <Button color="primary" variant="solid">
-                Back to {MODULE_DISPLAY_NAMES[moduleType]}
-              </Button>
-            </Link>
-          </CardBody>
-        </Card>
-      </div>
-    );
-  }
 
   return (
     <div className="min-h-screen bg-gradient-to-br from-slate-50 via-white to-blue-50 dark:from-slate-900 dark:via-slate-800 dark:to-blue-900">

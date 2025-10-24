@@ -110,9 +110,9 @@ export const Footer: React.FC = () => {
               <Image
                 src="/images/career-hq-logo.png"
                 alt="CareerHQ Logo"
-                width={400}
-                height={133}
-                className="h-36 w-auto object-contain"
+                width={240}
+                height={80}
+                className="h-20 w-auto object-contain"
               />
             </Link>
             <p className="text-foreground-500 mb-6 max-w-md">
@@ -161,7 +161,16 @@ export const Footer: React.FC = () => {
 
         <div className="flex flex-col md:flex-row justify-center items-center gap-4">
           <p className="text-foreground-500 text-sm text-center">
-            © {currentYear} CareerHQ. All rights reserved.
+            © {currentYear} CareerHQ. Powered by{" "}
+            <Link
+              href="https://mntfuture.com/"
+              target="_blank"
+              rel="noopener noreferrer"
+              className="font-bold bg-gradient-to-r from-primary-500 via-primary-600 to-primary-700 bg-clip-text text-transparent hover:from-primary-600 hover:via-primary-700 hover:to-primary-800 transition-all duration-300"
+            >
+              Magizh NexGen Technologies
+            </Link>
+            . All rights reserved.
           </p>
         </div>
       </div>
