@@ -30,11 +30,13 @@ export default async function InternshipAbroadDetailPage({
   params: Promise<{ id: string }>;
 }) {
   const { id } = await params;
-  const module = await getModule(id);
+  const moduleData = await getModule(id);
 
-  if (!module) {
+  if (!moduleData) {
     notFound();
   }
 
-  return <ModuleDetailPage module={module} moduleType="internship-abroad" />;
+  return (
+    <ModuleDetailPage module={moduleData} moduleType="internship-abroad" />
+  );
 }
