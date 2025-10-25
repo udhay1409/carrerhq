@@ -9,6 +9,18 @@ const allowedOrigins = [
 ];
 
 export function middleware(request: NextRequest) {
+  const hostname = request.nextUrl.hostname;
+  const url = request.nextUrl.clone();
+
+  // Redirect www to non-www for consistency (prevents CORS issues)
+  if (
+    hostname === "www.careerhq.in" &&
+    !request.nextUrl.pathname.startsWith("/api/")
+  ) {
+    url.hostname = "careerhq.in";
+    return NextResponse.redirect(url, { status: 301 });
+  }
+
   // Handle CORS for API routes
   if (request.nextUrl.pathname.startsWith("/api/")) {
     const origin = request.headers.get("origin");
@@ -52,5 +64,5 @@ export function middleware(request: NextRequest) {
 }
 
 export const config = {
-  matcher: "/api/:path*",
+  matcher: ["/((?!_next/static|_next/image|favicon.ico).*)"],
 };
